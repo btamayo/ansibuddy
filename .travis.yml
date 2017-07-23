@@ -1,6 +1,8 @@
 language: bash
 before_install:
   - ./test/scripts/install-bats.sh
+install:
+  - pip install pyyaml
 before_script:
   - export PATH="${HOME}/.local/bin:${PATH}"
 script:
