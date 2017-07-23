@@ -271,9 +271,8 @@ parse_args() {
             list-hosts) ansible_append_flags+=("--list-hosts")
                 shift
                 ;;
-            *) remainder_args+=("$1"); shift;;
             --)
-                break; shift;;
+                shift; break; shift;;
         esac
     done
 }
@@ -283,7 +282,6 @@ echo "DEBUG: [INPUT]" "$@"
 echo ""
 # Begin parse
 parse_args "$@"
-
 
 
 debug "DEBUG: [PWD]" "$PWD"
@@ -320,13 +318,6 @@ construct_playbook_command() {
     # Parse the extra ansible commands and make that override everything
     # Clashes: -l, -i, not -p
 
-
-    echo "EXTRA COMMANDS::: passed straight to Ansible"
-    echo "${remainder_args[*]}"
-    echo ""
-    echo ""
-
-
     #-i $hostsfile_final_path $playbook_final_path ${ansible_append_flags[*]} ${remainder_args[*]}"
 
     local inv_param="-i $hostsfile_final_path "
@@ -349,9 +340,6 @@ construct_playbook_command() {
     else
         playbook_command=$playbook_command$inv_param$playbook_param
     fi
-    echo "$playbook_command"
-    echo ""
-
 
     if [[ "${remainder_args[*]}" =~ $limit_arg_re ]]; then # And playgroups is ! -z
         echo "WARN: --limit argument passed by user as extra args"
@@ -367,17 +355,12 @@ construct_playbook_command() {
         playbook_command=$playbook_command$limit_groups_param
     fi
 
-    echo "$playbook_command"
-    echo ""
-
     if [[ "${remainder_args[*]}" =~ $check_syntax_re || "${ansible_append_flags[*]}" =~ $check_syntax_re ]]; then
         echo "DEBUG: extra: --syntax_check flag passed by user as extra args"
 
         # If it's in the ansible-append-flags, then we append it, otherwise let it fall through
         if [[ "${ansible_append_flags[*]}" =~ $check_syntax_re ]]; then playbook_command=$playbook_command$syntax_check_param; fi
     fi
-    echo "$playbook_command"
-    echo ""
 
     if [[ "${remainder_args[*]}" =~ $list_hosts_re || "${ansible_append_flags[*]}" =~ $list_hosts_re ]]; then
         echo "DEBUG: extra: --list-hosts flag passed by user as extra args"
