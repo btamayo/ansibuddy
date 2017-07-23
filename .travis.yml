@@ -4,4 +4,4 @@ before_install:
 before_script:
   - export PATH="${HOME}/.local/bin:${PATH}"
 script:
-  - ./bats-test-gen-run.sh
+  - ./bats-tests-gen-run.sh
