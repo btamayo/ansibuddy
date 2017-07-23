@@ -14,7 +14,7 @@ default_playbook_file_name="site.yml"
 ansible_append_flags=()
 
 # @TODO: Bianca Tamayo (Jul 22, 2017) - Just check if it's used with any "..." or more than two slashes
-if [[ $PWD != *"parser-ansible" ]]; then
+if [[ $PWD != *"ansibuddy" ]]; then
     echo "FATAL: Current directory may not be project root (where ap.sh is)"
 fi
 
