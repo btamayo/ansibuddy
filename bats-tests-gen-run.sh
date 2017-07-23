@@ -3,8 +3,12 @@
 # Generate tests and write it to file
 
 rm ./test_gen_ap.bats || :
-cd test
+
+cd test || exit
+
 ./bats-test-gen.py > ../test_gen_ap.bats
-cd ../
+
+cd ../ || exit
+
 chmod +x ./test_gen_ap.bats
 ./test_gen_ap.bats
