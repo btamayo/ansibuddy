@@ -13,31 +13,55 @@ Ansible wrapper for my own projects. This requires a specific directory structur
 $ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) [<command>...] -- [ansible-playbook-args]
 ```
 
-`hostgroup`:
+#### `hostgroup`:
 	- General format(s): `<service>.<environment>.<host group>` e.g. `myblog.dev.docker`
 
-`inventory-file`:
+#### `inventory-file`:
 	- Pass in an inventory file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Inventory files passed in with the `-i` flag always takes precedence over `<hostgroup>` and should not be passed together.
 
-`playbook`:
+#### `playbook`:
 	- @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
 
-`playbook-file`:
+#### `playbook-file`:
 	- Pass in a playbook file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Playbook files passed in with the `-p` flag always takes precedence over `<playbook>` and should not be passed together.
 
-`command`:
+#### `command`:
 	- `check`: Run a syntax check (`ansible-playbook ... --syntax-check`)
 	- `list-hosts`: List the affected hosts of this playbook run (`ansible-playbook ... --list-hosts`)
 	- `help`: Display usage
 
-`OPTIONS`: Other `ansible-playbook` options 
 
 `ansible-playbook-args`: Pass other ansible-playbook args. You must separate between ansibuddy arguments and ansible-playbook args using `--`. If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts`, ansibuddy will defer to those args instead.
+
+For example, running:
+
+```
+./ap bianca-blog.dev.docker site.yml -- -l webservers
+```
+
+Will give you `-l webservers` despite `docker` being provided as the `group name` into Ansibuddy:
+
+```
+[EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l webservers
+```
+
+And running:
+
+```
+/ap.sh bianca-blog.dev.docker site.yml
+```
+
+is equivalent to:
+
+```
+[EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l docker
+```
+
+
 
 ## To Do:
 
 - Proper argument parsing
-- Move tests to `/test` dir
 - Subcommands e.g.:
 	- `setup`: sets up the machine
 	- `install`: installs the app or service
@@ -46,6 +70,9 @@ $ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) 
 
 ## Testing
 
+To test bash scripts, we use [bats](https://github.com/sstephenson/bats), then generate tests. This is to speed up both running the tests (as they're not generated every time), and writing them (simple YAML configuration).
+
+### To run the tests:
 - Install [bats](https://github.com/sstephenson/bats) first.
 - Install the submodules if needed:
 	- [bats-assert](https://github.com/ztombol/bats-assert)
@@ -53,23 +80,7 @@ $ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) 
 
 ### Generating tests:
 
-The point of generating the Bats tests file is to generate it once, validate your tests by eye, and then run the tests.
+1. Write a spec in `test/spec.yml`.
+2. Run `test/run-tests.sh`.
 
-- Write a spec in `test/spec.yml`
-- Run `test/bats-test-gen.py` to print your tests to stdout
-- Run `bats-test-gen-run.sh` to generate and run your tests automatically (uses a file called `test_gen_ap.bats`)
-
-
-
-```shell
-$  ./test_ap.bats
-```
-
-## Other:
-
-Snippet: Using nodemon (it won't watch files unless you specify, but you can use `rs` easily):
-
-```shell
-$ nodemon --exec "./ap.sh bianca-blog.dev.app check || true"
-```
-
+- `test/run-tests.sh` calls a Python script called `bats-test-gen.py` and relies on stdout and redirection to write to a file in a new, temporary directory called `".tmp-dir"` in the repo root. It copies over necessary files then runs the generated tests within.

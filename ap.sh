@@ -110,8 +110,8 @@ parse_inventory_arg() {
             debug "INFO: Limiting to host groups [${grp[*]}]"
 
             # For the rest, make them into groups
-            playgroups=$(printf ":&%s" "${grp[@]]}")
-            playgroups=${bar:1}
+            # playgroups=$(printf ":&%s" "${grp[@]]}")
+            playgroups=${grp}
 
 
         elif [[ "${#tokens[@]}" -eq 1 ]]; then
@@ -275,6 +275,9 @@ parse_args() {
                 shift; break; shift;;
         esac
     done
+
+    remainder_args=$*
+
 }
 
 # ------- MAIN  -------
