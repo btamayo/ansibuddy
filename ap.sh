@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-# Constants
+# "Constants"
+ansible_project_base=$(dirname "$0")
+
 inventory_dir_name="inventories"
 playbook_dir_name="playbooks"
-ansible_project_base="$(dirname $0)"
 inventory_base_dir=$ansible_project_base/$inventory_dir_name
 playbook_base_dir=$ansible_project_base/$playbook_dir_name
 
@@ -13,14 +14,15 @@ default_playbook_file_name="site.yml"
 # Script-specific commands like "check", "help", and "list-hosts"
 ansible_append_flags=()
 
-# @TODO: Bianca Tamayo (Jul 22, 2017) - Just check if it's used with any "..." or more than two slashes
-if [[ $PWD != *"ansibuddy" ]]; then
-    echo "FATAL: Current directory may not be project root (where ap.sh is)"
+# @TODO: Bianca Tamayo (Jul 22, 2017) - Make unnecessary
+if [[ $ansible_project_base != "." ]]; then
+    echo "FATAL: Current directory should be project root (where ap.sh is). Paths may resolve incorrectly otherwise."
 fi
 
 # Functions
 usage() {
     echo "$1"
+
     local help_text="
     USAGE
         $0 <HOSTGROUP> <COMMAND> [...OPTIONS] [...ARGS]
@@ -41,8 +43,6 @@ usage() {
 }
 
 find_inventory() {
-    echo "INFO: Looking for group: $hostgroup"
-
     # Parse hostgroup name
     IFS='.' read -ra tokens <<< "$hostgroup"
 
@@ -62,7 +62,7 @@ find_inventory() {
 
     hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
 
-    echo "INFO: Finding group [$grp] in $hostsfile_find_path/hosts"
+    echo "INFO: Finding group [${grp[*]}] in $hostsfile_find_path/hosts"
 
     if [[ ! -d "$hostsfile_find_path" ]]; then
         echo "DEBUG: $hostsfile_find_path does not exist."
@@ -79,16 +79,14 @@ find_inventory() {
     # bianca-blog.dev.docker&webserver
     # bianca-blog.dev&stage.docker&webserver
 
-
-
     # @TODO: Bianca Tamayo (Jul 22, 2017) - Create generator functions
     # @TODO: Bianca Tamayo (Jul 22, 2017) - Fallback to ansible find path
-
-
 }
 
 # Find playbook
-# If the passed_playbook_file_name looks like a path, find it in that path first relative to ./playbooks/ then relative to basedir, unless it's absolute
+# If the passed_playbook_file_name looks like a path, 
+# find it in that path first relative to ./playbooks/ then relative to 
+# basedir, unless it's absolute
 
 find_playbook_in_paths() {
     local test_path
@@ -114,7 +112,7 @@ parse_playbook_path() {
         
         playbook_find_dir=$passed_playbook_file_name
 
-        # Maybe it's a file to an actual playbook
+        # Maybe it's a path to an actual playbook
         if [[ -f "$playbook_find_dir" ]]; then
             playbook_final_path=$playbook_find_dir
         fi
@@ -122,7 +120,7 @@ parse_playbook_path() {
     else
         # Start looking relative to playbook base dir, then to $pwd
 
-        # Unless it's in the ansble ignore cgf
+        # Unless it's in the ansible ignore cfg
         # ./playbooks/{service_name}.yml > ./playbooks/{service_name}
         check_file_paths=( "${playbook_base_dir}/${service_name}.yml" )
         check_file_paths+=( "${playbook_base_dir}/${service_name}.yaml" )
@@ -169,6 +167,8 @@ parse_args() {
 
 
     if [[ "$#" == 0 ]]; then
+        # @TODO: Bianca Tamayo (Jul 22, 2017) - This contradicts the behavior of the default 'site.yml' playbook
+        # since it can be ran with ./ap hostname 
         usage "Error: Missing action";
         exit 0;
     fi
@@ -231,17 +231,11 @@ echo "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
 echo "DEBUG: Parsed groupname in host:" "${grp[@]}"
 echo ""
 echo "DEBUG: Looking for inventory in: $hostsfile_find_path"
-echo "DEBUG: Playbook file: $playbook_file"
+echo "DEBUG: Playbook file: $passed_playbook_file_name"
 
 echo ""
 echo "DEBUG: [FINAL]: $playbook_command"
 
-
-
-# Test: no hostgroup, invalid filenames, invalid group names, options switched around, no extra args
-
 # TODO: Bianca Tamayo (Jul 22, 2017) - Add prompt and suppress prompt
-
-
 
 # End of file

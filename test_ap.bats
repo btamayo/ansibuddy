@@ -23,23 +23,9 @@
 
 # Run this test from root dir
 
-root_dir=$PWD
 
-load_lib() {
-	local name="$1"
-	load "$root_dir/test/test_helper/${name}/load.bash"
-}
 
-load_lib bats-support
-load_lib bats-assert
-
-@test 'fail()' {
-  fail 'this test always fails'
-}
-
-@test 'assert_equal()' {
-  assert_equal 'have' 'want'
-}
+# Test: no hostgroup, invalid filenames, invalid group names, options switched around, no extra args
 
 # echo "DEBUG: Hosts: $hostgroup"
 # echo "DEBUG: Found inventory file: $determined_inventoryfile"
