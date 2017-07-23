@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 # "Constants"
+base_folder=$PWD
 ansible_project_base=$(dirname "$0")
 
 inventory_dir_name="inventories"
 playbook_dir_name="playbooks"
-inventory_base_dir=$ansible_project_base/$inventory_dir_name
-playbook_base_dir=$ansible_project_base/$playbook_dir_name
+inventory_base_dir=$base_folder/$inventory_dir_name
+playbook_base_dir=$base_folder/$playbook_dir_name
 
 # Defaults
 # default_playbook_file_name="site.yml"
@@ -14,12 +15,20 @@ playbook_base_dir=$ansible_project_base/$playbook_dir_name
 # Script-specific commands like "check", "help", and "list-hosts"
 ansible_append_flags=()
 
+# The rest of the args to pass to ansible
+remainder_args=()
+
 # @TODO: Bianca Tamayo (Jul 22, 2017) - Make unnecessary
 if [[ $ansible_project_base != "." ]]; then
     echo "FATAL: Current directory should be project root (where ap.sh is). Paths may resolve incorrectly otherwise."
+    exit 1
 fi
 
 # Functions
+debug() {
+    if [[ "$debug_mode" == "true" ]]; then echo "$1"; fi
+}
+
 usage() {
     echo "$1"
 
@@ -45,11 +54,11 @@ usage() {
 find_inventory_in_paths() {
 
     if [[ ! -d "$hostsfile_find_path" ]]; then
-        echo "DEBUG: $hostsfile_find_path does not exist"
+        debug "DEBUG: $hostsfile_find_path does not exist"
     elif [[ -d "$hostsfile_find_path" && ! -f "$hostsfile_find_path/hosts" ]]; then
-        echo "DEBUG: hosts file in $hostsfile_find_path does not exist"
+        debug "DEBUG: hosts file in $hostsfile_find_path does not exist"
     elif [[ -f "$hostsfile_find_path/hosts" ]]; then
-        echo "DEBUG: Found hosts file in $hostsfile_find_path/hosts"
+        debug "DEBUG: Found hosts file in $hostsfile_find_path/hosts"
     fi
 
     # If it does exist, we're still gonna assign it and let ansible fail. ^ is for debugging only.
@@ -57,49 +66,54 @@ find_inventory_in_paths() {
 }
 
 parse_inventory_arg() {
-    # Parse hostgroup name
-    IFS='.' read -ra tokens <<< "$hostgroup"
+    if [[ ! -z "$inventory_file" ]]; then
+        # Just go with it and let ansible fail
+        hostsfile_final_path="$inventory_file"
+    else
+        # Parse hostgroup name
+        IFS='.' read -ra tokens <<< "$hostgroup"
 
-    # Try to find a group in the inventory that fits it
-    # /inventories/{service}/{environment}/hosts then save the group
-    # e.g. bianca-blog.dev.docker
+        # Try to find a group in the inventory that fits it
+        # /inventories/{service}/{environment}/hosts then save the group
+        # e.g. bianca-blog.dev.docker
 
-    # Needs to be at least two, since we don't just deploy to "bianca-blog"
-    if [[ "${#tokens[@]}" -gt 1 ]]; then
-        # Parse by <service>.<env>
-        service_name="${tokens[0]}"
-        env_name="${tokens[1]}"
+        # Needs to be at least two, since we don't just deploy to "bianca-blog"
+        if [[ "${#tokens[@]}" -gt 1 ]]; then
+            # Parse by <service>.<env>
+            service_name="${tokens[0]}"
+            env_name="${tokens[1]}"
 
-        # Remove first two els
-        grp=("${tokens[@]:2}")
+            # Remove first two els
+            grp=("${tokens[@]:2}")
 
-        hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
+            hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
 
-        echo "INFO: Finding group [${grp[*]}] in $hostsfile_find_path/hosts"
+            debug "INFO: Finding group [${grp[*]}] in $hostsfile_find_path/hosts"
 
-        find_inventory_in_paths
+            find_inventory_in_paths
 
 
-    elif [[ "${#tokens[@]}" -eq 1 ]]; then
-        # Just the service name or the env name for single projects
+        elif [[ "${#tokens[@]}" -eq 1 ]]; then
+            # Just the service name or the env name for single projects
 
-        # e.g. bianca-blog/hosts
-        # e.g. dev/hosts
+            # e.g. bianca-blog/hosts
+            # e.g. dev/hosts
 
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle custom inv files?
+            # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle custom inv files?
 
-        dir_name="${tokens[0]}"
-        hostsfile_find_path="$inventory_base_dir/$dir_name"
+            dir_name="${tokens[0]}"
+            hostsfile_find_path="$inventory_base_dir/$dir_name"
 
-        find_inventory_in_paths
+            find_inventory_in_paths
+        fi
+
+        # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle cases like this: bianca-blog.dev.docker.webserver
+        # bianca-blog.dev.docker&webserver
+        # bianca-blog.dev&stage.docker&webserver
+
+        # @TODO: Bianca Tamayo (Jul 22, 2017) - Create generator functions
+        # @TODO: Bianca Tamayo (Jul 22, 2017) - Fallback to ansible find path
     fi
-
-    # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle cases like this: bianca-blog.dev.docker.webserver
-    # bianca-blog.dev.docker&webserver
-    # bianca-blog.dev&stage.docker&webserver
-
-    # @TODO: Bianca Tamayo (Jul 22, 2017) - Create generator functions
-    # @TODO: Bianca Tamayo (Jul 22, 2017) - Fallback to ansible find path
 }
 
 # Find playbook
@@ -113,7 +127,7 @@ find_playbook_in_paths() {
     for test_path in "${check_file_paths[@]}"; do
         if [[ -f "$test_path" ]]; then
             playbook_final_path="$test_path"
-            echo "DEBUG: Playbook found in: $playbook_final_path"
+            debug "DEBUG: Playbook found in: $playbook_final_path"
             break;
         else
             echo "DEBUG: Playbook not found in: $test_path"
@@ -186,20 +200,30 @@ parse_args() {
     hostgroup="$1"; shift;
 
     if [[ -z "$hostgroup" ]]; then
-        usage "Error: Missing hostgroup";
-        exit 0;
+        usage "ERROR: Missing hostgroup"
+        exit 1;
+    elif [[ "$hostgroup" == "-i" ]]; then
+        # Pass in inventory file
+        shift;
+        inventory_file="$1"
+        shift;
     fi
 
 
     if [[ "$#" == 0 ]]; then
         # @TODO: Bianca Tamayo (Jul 22, 2017) - This contradicts the behavior of the default 'site.yml' playbook
         # since it can be ran with ./ap hostname 
-        usage "Error: Missing playbook";
-        exit 0;
+        usage "ERROR: Missing playbook";
+        exit 1;
     fi
+
+    passed_playbook_file_name="$1"; shift;
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
+            debug)
+                debug_mode="true"
+                shift;;
             help)
                 usage
                 exit 0
@@ -210,9 +234,8 @@ parse_args() {
             list-hosts) ansible_append_flags+=("--list-hosts")
                 shift
                 ;;
-            *)  passed_playbook_file_name="$1"; shift;; # TODO: Bianca Tamayo (Jul 22, 2017) - this will keep looping if there's unhandled args, also it does not maintain order
-
-            --)
+            *) remainder_args+=("$1"); shift;;
+            --|---)
                 break; shift;;
         esac
     done
@@ -223,15 +246,15 @@ parse_args() {
 
 # ------- MAIN  -------
 
-echo "DEBUG: [INPUT]" "$@"
+debug "DEBUG: [INPUT]" "$@"
 
 # Begin parse
 parse_args "$@"
 
-echo ""
-echo "DEBUG: Passed hostgroup: $hostgroup"
-echo "DEBUG: Passed playbook name or path: $passed_playbook_file_name"
-echo "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
+debug ""
+debug "DEBUG: Passed hostgroup: $hostgroup"
+debug "DEBUG: Passed playbook name or path: $passed_playbook_file_name"
+debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
 
 # Begin logic
 parse_inventory_arg
@@ -245,20 +268,31 @@ parse_playbook_arg
 # ---------------------
 
 
-# Construct the ansible command
-playbook_command="ansible-playbook -i $hostsfile_final_path $playbook_final_path ${ansible_append_flags[*]}"
+# Construct the ansible command @TODO: Bianca Tamayo (Jul 22, 2017) - get rid of extra spaces
+playbook_command="ansible-playbook -i $hostsfile_final_path $playbook_final_path ${ansible_append_flags[*]} ${remainder_args[*]}"
 
+debug "DEBUG: Additional options:" "${remainder_args[*]}"
 
-echo "DEBUG: Additional options:" "$@"
+debug "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
+debug "DEBUG: Parsed groupname in host:" "${grp[@]}"
+debug ""
+debug "DEBUG: Looking for inventory in: $hostsfile_find_path"
+debug "DEBUG: Playbook file: $passed_playbook_file_name"
 
-echo "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
-echo "DEBUG: Parsed groupname in host:" "${grp[@]}"
+debug ""
+
 echo ""
-echo "DEBUG: Looking for inventory in: $hostsfile_find_path"
-echo "DEBUG: Playbook file: $passed_playbook_file_name"
-
+echo "[EXEC]: $playbook_command"
 echo ""
-echo "DEBUG: [FINAL]: $playbook_command"
+
+while true; do
+    read -p "Continue? " yn
+    case $yn in
+        [Yy]* ) $playbook_command; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
 
 # TODO: Bianca Tamayo (Jul 22, 2017) - Add prompt and suppress prompt
 
