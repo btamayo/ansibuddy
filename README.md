@@ -10,24 +10,27 @@ Ansible wrapper for my own projects. This requires a specific directory structur
 ## Usage
 
 ```bash
-$ ./ap.sh <hostgroup> (<playbook> | -i <playbook-file>) [<command>...] ...
+$ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) [<command>...] ...
 ```
 
 `hostgroup`:
 	- General format(s): `<service>.<environment>.<host group>` e.g. `myblog.dev.docker`
 
+`inventory-file`:
+	- Pass in an inventory file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Inventory files passed in with the `-i` flag always takes prededence over `<hostgroup>` and should not be passed together.
+
 `playbook`:
 	- @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
 
-`playbook-file`: 
-	- Path to a playbook file from root. Script does not check for file's existence.
+`playbook-file`:
+	- Pass in a playbook file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Playbook files passed in with the `-p` flag always takes prededence over `<playbook>` and should not be passed together.
 
 `command`:
 	- `check`: Run a syntax check (`ansible-playbook ... --syntax-check`)
 	- `list-hosts`: List the affected hosts of this playbook run (`ansible-playbook ... --list-hosts`)
 	- `help`: Display usage
 
-`OPTIONS`: Other ansible-playbook options 
+`OPTIONS`: Other `ansible-playbook` options 
 
 `ARGS`: Treat other args like other ansible-playbook args
 

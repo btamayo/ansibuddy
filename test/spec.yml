@@ -25,6 +25,7 @@ hostgroup: bianca-blog.dev.app
 type: assert_line
 
 tests:
+  # Parsing
   - description: Parse hostgroup correctly
     playbook: site.yml
     commands: ""
@@ -54,3 +55,43 @@ tests:
     playbook: site.yml
     commands: check list-hosts
     expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
+
+
+  # Finding
+  - description: Update basepath correctly 
+    playbook: site.yml
+    commands: -b example-1 check list-hosts
+    regex: '^DEBUG: Updated base path to: .*\/example-1[\/]?$'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  

@@ -2,8 +2,6 @@
 
 # "Constants"
 base_folder=$PWD
-ansible_project_base=$(dirname "$0")
-
 inventory_dir_name="inventories"
 playbook_dir_name="playbooks"
 inventory_base_dir=$base_folder/$inventory_dir_name
@@ -18,14 +16,32 @@ ansible_append_flags=()
 # The rest of the args to pass to ansible
 remainder_args=()
 
-# @TODO: Bianca Tamayo (Jul 22, 2017) - Make unnecessary
-echo $PWD
-if [[ $ansible_project_base != "." ]]; then
-    echo "FATAL: Current directory should be project root (where ap.sh is). Paths may resolve incorrectly otherwise."
-    exit 1
-fi
+# @SEE: https://github.com/ansible/proposals/issues/35 for possible ansible integration
 
 # Functions
+update_paths() {
+    local passed_base_dir="$1"
+
+    # See if it's an absolute path
+    if [[ "$passed_base_dir" = /* ]]; then
+        base_folder=$passed_base_dir
+    else
+        # Relative to PWD
+        base_folder=$base_folder/$passed_base_dir
+    fi
+
+    # Warn
+    if [[ ! -d "$base_folder" ]]; then
+        echo "WARN: $base_folder non-existent path or file"
+    fi
+
+    debug "DEBUG: Updated base folder: $base_folder"
+
+    # TODO: Bianca Tamayo (Jul 23, 2017) - This can cause double // in prints, etc. affects polish
+    inventory_base_dir=$base_folder/$inventory_dir_name
+    playbook_base_dir=$base_folder/$playbook_dir_name
+}
+
 debug() {
     if [[ "$debug_mode" == "true" ]]; then echo "$@"; fi
 }
@@ -84,14 +100,18 @@ parse_inventory_arg() {
             service_name="${tokens[0]}"
             env_name="${tokens[1]}"
 
-            # Remove first two els
+            # Remove first two els which are directories (Note that after the first two '.', this converts into parent>child groups. @TODO)
             grp=("${tokens[@]:2}")
 
             hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
 
-            debug "INFO: Finding group [${grp[*]}] in $hostsfile_find_path/hosts"
-
             find_inventory_in_paths
+
+            debug "INFO: Limiting to host groups [${grp[*]}]"
+
+            # For the rest, make them into groups
+            playgroups=$(printf ":&%s" "${grp[@]]}")
+            playgroups=${bar:1}
 
 
         elif [[ "${#tokens[@]}" -eq 1 ]]; then
@@ -155,7 +175,7 @@ parse_playbook_arg() {
         # Start looking relative to playbook base dir, then to $pwd
 
         # Unless it's in the ansible ignore cfg
-        # ./playbooks/{service_name}.yml > ./playbooks/{service_name}
+        # ./playbooks/{service_name}.yml > ./playbooks/{service_name}/
         check_file_paths=( "${playbook_base_dir}/${service_name}.yml" )
         check_file_paths+=( "${playbook_base_dir}/${service_name}.yaml" )
 
@@ -220,8 +240,20 @@ parse_args() {
 
     passed_playbook_file_name="$1"; shift;
 
+    if [[ "$passed_playbook_file_name" == "-p" ]]; then
+        # Pass in inventory file
+        shift;
+        playbook_file_set_by_user="$1"
+        shift;
+    fi
+
+    # TODO: Bianca Tamayo (Jul 23, 2017) - arg parsing w/ short & long opts
     while [ "$#" -gt 0 ]; do
         case "$1" in
+            -b|--base)
+                shift;
+                update_paths "$1"
+                shift;;
             debug)
                 debug_mode="true"
                 shift;;
@@ -236,24 +268,34 @@ parse_args() {
                 shift
                 ;;
             *) remainder_args+=("$1"); shift;;
-            --|---)
+            --)
                 break; shift;;
         esac
     done
 }
 
 # ------- MAIN  -------
-
-debug "DEBUG: [PWD]" "$PWD"
-debug "DEBUG: [INPUT]" "$@"
-
+echo "DEBUG: [INPUT]" "$@"
+echo ""
 # Begin parse
 parse_args "$@"
 
-debug ""
+
+
+debug "DEBUG: [PWD]" "$PWD"
+debug "."
 debug "DEBUG: Passed hostgroup: $hostgroup"
+debug "."
+debug "DEBUG: Inventory path invoked with -i if any: $inventory_file"
+debug "."
+debug "DEBUG: Playbook path invoked with -p if any: $playbook_file_set_by_user" 
+debug "."
 debug "DEBUG: Passed playbook name or path: $passed_playbook_file_name"
+debug "."
+debug "DEBUG: Base path is: $base_folder"
+debug "."
 debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
+
 
 # Begin logic
 parse_inventory_arg
@@ -268,21 +310,99 @@ parse_playbook_arg
 
 
 # Construct the ansible command @TODO: Bianca Tamayo (Jul 22, 2017) - get rid of extra spaces
-playbook_command="ansible-playbook -i $hostsfile_final_path $playbook_final_path ${ansible_append_flags[*]} ${remainder_args[*]}"
+playbook_command="ansible-playbook "
+
+construct_playbook_command() {
+    # Parse the extra ansible commands and make that override everything
+    # Clashes: -l, -i, not -p
+
+
+    echo "EXTRA COMMANDS::: passed straight to Ansible"
+    echo "${remainder_args[*]}"
+    echo ""
+    echo ""
+
+
+    #-i $hostsfile_final_path $playbook_final_path ${ansible_append_flags[*]} ${remainder_args[*]}"
+
+    local inv_param="-i $hostsfile_final_path "
+    local playbook_param="$playbook_final_path "
+    local limit_groups_param="-l $playgroups "
+    local syntax_check_param="--syntax_check "
+    local list_hosts_param="--list-hosts "
+
+    local limit_arg_re="(-l|--limit)+"
+    local check_syntax_re="(--syntax_check)+"
+    local inventory_arg_re="(-i|--inventory-file)+"
+    local list_hosts_re="(--list-hosts)+"
+
+    
+
+    if [[ "${remainder_args[*]}" =~ $inventory_arg_re ]]; then
+        echo "WARN: --inventory-file argument passed by user as extra args"
+        # Skip appending it then
+        playbook_command=$playbook_command$playbook_param
+    else
+        playbook_command=$playbook_command$inv_param$playbook_param
+    fi
+    echo "$playbook_command"
+    echo ""
+
+
+    if [[ "${remainder_args[*]}" =~ $limit_arg_re ]]; then # And playgroups is ! -z
+        echo "WARN: --limit argument passed by user as extra args"
+        echo "PLAYGROUPS: $playgroups"
+
+        if [[ -z "$playgroups" ]]; then
+            # noop, just add it at the end
+            echo ""
+        else
+            echo "playgroups: $playgroups" #TODO append
+        fi
+    else
+        playbook_command=$playbook_command$limit_groups_param
+    fi
+
+    echo "$playbook_command"
+    echo ""
+
+    if [[ "${remainder_args[*]}" =~ $check_syntax_re || "${ansible_append_flags[*]}" =~ $check_syntax_re ]]; then
+        echo "DEBUG: extra: --syntax_check flag passed by user as extra args"
+
+        # If it's in the ansible-append-flags, then we append it, otherwise let it fall through
+        if [[ "${ansible_append_flags[*]}" =~ $check_syntax_re ]]; then playbook_command=$playbook_command$syntax_check_param; fi
+    fi
+    echo "$playbook_command"
+    echo ""
+
+    if [[ "${remainder_args[*]}" =~ $list_hosts_re || "${ansible_append_flags[*]}" =~ $list_hosts_re ]]; then
+        echo "DEBUG: extra: --list-hosts flag passed by user as extra args"
+
+        # If it's in the ansible-append-flags, then we append it
+        if [[ "${ansible_append_flags[*]}" =~ $list_hosts_re ]]; then playbook_command=$playbook_command$list_hosts_param; fi
+    fi
+
+    playbook_command=$playbook_command${remainder_args[*]}
+
+    # May have to update this each time cli updates
+}
+
+construct_playbook_command
 
 echo ""
 echo "[EXEC]: $playbook_command"
 echo ""
 
+debug "DEBUG: Host group and child names: $playgroups"
 debug "DEBUG: Additional options:" "${remainder_args[*]}"
 
-debug "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
+# debug "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
 debug "DEBUG: Parsed groupname in host:" "${grp[@]}"
-debug ""
-debug "DEBUG: Looking for inventory in: $hostsfile_find_path"
+debug "."
+# debug "DEBUG: Looking for inventory in: $hostsfile_find_path"
+debug "."
 debug "DEBUG: Playbook file: $passed_playbook_file_name"
-
-debug ""
+debug "."
 
 # TODO: Bianca Tamayo (Jul 22, 2017) - Add uppress prompt
 while true; do

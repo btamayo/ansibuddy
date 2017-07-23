@@ -25,7 +25,7 @@ load_lib bats-assert
 
 TEST_TEMPLATE = """@test "{description} [{hostgroup} {playbook} {commands}]" {{
     run ./ap.sh {hostgroup} {playbook} {commands} debug
-    {assert_type} {partial} "{expected}"
+    {assert_type} {partial} {regexflag} "{expected}"
 }}
 """
 
@@ -40,6 +40,11 @@ def generate_tests(suite):
             test['partial'] = '--partial'
         else:
             test['partial'] = ""
+
+        if 'regex' in test:
+            test['regexflag'] = '--regexp'
+            test['expected'] = test['regex']
+
         test = TEST_TEMPLATE.format(hostgroup=hostgroup, assert_type=assert_type, **test)
         print test
 
