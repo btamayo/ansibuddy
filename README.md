@@ -10,20 +10,20 @@ Ansible wrapper for my own projects. This requires a specific directory structur
 ## Usage
 
 ```bash
-$ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) [<command>...] ...
+$ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) [<command>...] -- [ansible-playbook-args]
 ```
 
 `hostgroup`:
 	- General format(s): `<service>.<environment>.<host group>` e.g. `myblog.dev.docker`
 
 `inventory-file`:
-	- Pass in an inventory file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Inventory files passed in with the `-i` flag always takes prededence over `<hostgroup>` and should not be passed together.
+	- Pass in an inventory file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Inventory files passed in with the `-i` flag always takes precedence over `<hostgroup>` and should not be passed together.
 
 `playbook`:
 	- @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
 
 `playbook-file`:
-	- Pass in a playbook file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Playbook files passed in with the `-p` flag always takes prededence over `<playbook>` and should not be passed together.
+	- Pass in a playbook file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Playbook files passed in with the `-p` flag always takes precedence over `<playbook>` and should not be passed together.
 
 `command`:
 	- `check`: Run a syntax check (`ansible-playbook ... --syntax-check`)
@@ -32,7 +32,7 @@ $ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) 
 
 `OPTIONS`: Other `ansible-playbook` options 
 
-`ARGS`: Treat other args like other ansible-playbook args
+`ansible-playbook-args`: Pass other ansible-playbook args. You must separate between ansibuddy arguments and ansible-playbook args using `--`. If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts`, ansibuddy will defer to those args instead.
 
 ## To Do:
 
