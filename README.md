@@ -7,24 +7,28 @@ Ansible wrapper for my own projects.
 
 
 ```bash
-$ ./ap.sh <hostgroup> [command|playbook-file] [...OPTIONS] [...ARGS]
+$ ./ap.sh <HOSTGROUP> <PLAYBOOK> [<COMMAND>] ...
 ```
 
-`hostgroup`:
+`HOSTGROUP`:
 	- General format(s): `<service>.<environment>` e.g. `<bianca-blog>.<production>`
 
-`playbook-file`:
+`PLAYBOOK`:
 	- path to playbook from root
 
-`OPTIONS`: Other ansible-playbook options
-
-`ARGS`: Treat other args like other ansible-playbook args
-
-`command`:
+`??? TODO`:
 	- `setup`: sets up the machine
 	- `install`: installs the app or service
 	- `deploy`: configures components on the host(s) for the app
 
+`COMMAND`:
+	- check
+	- list-hosts
+	- help
+
+`OPTIONS`: Other ansible-playbook options 
+
+`ARGS`: Treat other args like other ansible-playbook args
 
 
 ### Other:

@@ -25,7 +25,7 @@ usage() {
 
     local help_text="
     USAGE
-        $0 <HOSTGROUP> <COMMAND> [...OPTIONS] [...ARGS]
+        $0 <HOSTGROUP> <PLAYBOOK> [<COMMAND>] ...
 
     DESCRIPTION
         A wrapper script around ansible-playbook
