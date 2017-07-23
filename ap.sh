@@ -222,11 +222,6 @@ parse_args() {
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
-            test)
-                test_mode="true"
-                debug_mode="true"
-                base_folder="$PWD/test"
-                shift;;
             debug)
                 debug_mode="true"
                 shift;;
