@@ -13,38 +13,38 @@ load_lib bats-assert
 # ----------------------------------------------------------------
 
 
-@test "Parse hostgroup correctly []" {
-    run ./ap.sh bianca-blog.dev.app  
+@test "Parse hostgroup correctly [bianca-blog.dev.app site.yml ]" {
+    run ./ap.sh bianca-blog.dev.app site.yml  test
     assert_line "DEBUG: Passed hostgroup: bianca-blog.dev.app"
 }
 
 
-@test "Parse playbook name or path correctly []" {
-    run ./ap.sh bianca-blog.dev.app site-a.yml 
+@test "Parse playbook name or path correctly [bianca-blog.dev.app site-a.yml ]" {
+    run ./ap.sh bianca-blog.dev.app site-a.yml  test
     assert_line "DEBUG: Passed playbook name or path: site-a.yml"
 }
 
 
-@test "Parse playbook name or path correctly with two commands [check list-hosts]" {
-    run ./ap.sh bianca-blog.dev.app site-a.yml check list-hosts
+@test "Parse playbook name or path correctly with two commands [bianca-blog.dev.app site.yml check list-hosts]" {
+    run ./ap.sh bianca-blog.dev.app site.yml check list-hosts test
     assert_line "DEBUG: Passed playbook name or path: site-a.yml"
 }
 
 
-@test "Parse playbook name or path correctly with two commands [check list-hosts]" {
-    run ./ap.sh bianca-blog.dev.app site-a.yml check list-hosts
+@test "Parse playbook name or path correctly with two commands [bianca-blog.dev.app site.yml check list-hosts]" {
+    run ./ap.sh bianca-blog.dev.app site.yml check list-hosts test
     assert_line "DEBUG: Passed Commands: --syntax-check --list-hosts"
 }
 
 
-@test "Parse & convert one script command correctly [check]" {
-    run ./ap.sh bianca-blog.dev.app  check
+@test "Parse & convert one script command correctly [bianca-blog.dev.app site.yml check]" {
+    run ./ap.sh bianca-blog.dev.app site.yml check test
     assert_line "DEBUG: Passed Commands: --syntax-check"
 }
 
 
-@test "Parse & convert two script commands correctly [check list-hosts]" {
-    run ./ap.sh bianca-blog.dev.app  check list-hosts
+@test "Parse & convert two script commands correctly [bianca-blog.dev.app site.yml check list-hosts]" {
+    run ./ap.sh bianca-blog.dev.app site.yml check list-hosts test
     assert_line "DEBUG: Passed Commands: --syntax-check --list-hosts"
 }
 

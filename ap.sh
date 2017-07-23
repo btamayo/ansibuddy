@@ -26,7 +26,7 @@ fi
 
 # Functions
 debug() {
-    if [[ "$debug_mode" == "true" ]]; then echo "$1"; fi
+    if [[ "$debug_mode" == "true" ]]; then echo "$@"; fi
 }
 
 usage() {
@@ -34,7 +34,7 @@ usage() {
 
     local help_text="
     USAGE
-        $0 <HOSTGROUP> <PLAYBOOK> [<COMMAND>] ...
+        $0 <HOSTGROUP> <PLAYBOOK> [<COMMAND>...] ...
 
     DESCRIPTION
         A wrapper script around ansible-playbook
@@ -130,7 +130,7 @@ find_playbook_in_paths() {
             debug "DEBUG: Playbook found in: $playbook_final_path"
             break;
         else
-            echo "DEBUG: Playbook not found in: $test_path"
+            debug "DEBUG: Playbook not found in: $test_path"
         fi
     done
 }
@@ -221,6 +221,11 @@ parse_args() {
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
+            test)
+                test_mode="true"
+                debug_mode="true"
+                base_folder="$PWD/test"
+                shift;;
             debug)
                 debug_mode="true"
                 shift;;
@@ -238,6 +243,7 @@ parse_args() {
             --|---)
                 break; shift;;
         esac
+        echo ${ansible_append_flags[*]}
     done
 }
 
@@ -271,6 +277,10 @@ parse_playbook_arg
 # Construct the ansible command @TODO: Bianca Tamayo (Jul 22, 2017) - get rid of extra spaces
 playbook_command="ansible-playbook -i $hostsfile_final_path $playbook_final_path ${ansible_append_flags[*]} ${remainder_args[*]}"
 
+echo ""
+echo "[EXEC]: $playbook_command"
+echo ""
+
 debug "DEBUG: Additional options:" "${remainder_args[*]}"
 
 debug "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
@@ -280,10 +290,6 @@ debug "DEBUG: Looking for inventory in: $hostsfile_find_path"
 debug "DEBUG: Playbook file: $passed_playbook_file_name"
 
 debug ""
-
-echo ""
-echo "[EXEC]: $playbook_command"
-echo ""
 
 while true; do
     read -p "Continue? " yn

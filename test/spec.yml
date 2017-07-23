@@ -19,13 +19,14 @@
 
 # DEBUG: [FINAL]: ansible-playbook -i ./inventories/bianca-blog/dev site.yml --syntax-check --list-hosts
 
+# Python converts undefineds to "None" so for ease just defined it here as "" for now
 
 hostgroup: bianca-blog.dev.app
 type: assert_line
 
 tests:
   - description: Parse hostgroup correctly
-    playbook: ""
+    playbook: site.yml
     commands: ""
     expected: "DEBUG: Passed hostgroup: bianca-blog.dev.app"
 
@@ -35,22 +36,22 @@ tests:
     expected: "DEBUG: Passed playbook name or path: site-a.yml"
 
   - description: Parse playbook name or path correctly with two commands
-    playbook: "site-a.yml"
+    playbook: site.yml
     commands: check list-hosts
     expected: "DEBUG: Passed playbook name or path: site-a.yml"
 
   - description: Parse playbook name or path correctly with two commands
-    playbook: "site-a.yml"
+    playbook: site.yml
     commands: check list-hosts
     expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
 
   - description: Parse & convert one script command correctly
-    playbook: ""
+    playbook: site.yml
     commands: check
     expected: "DEBUG: Passed Commands: --syntax-check"
 
   - description: Parse & convert two script commands correctly
-    playbook: ""
+    playbook: site.yml
     commands: check list-hosts
     expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
 
