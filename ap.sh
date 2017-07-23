@@ -243,7 +243,6 @@ parse_args() {
             --|---)
                 break; shift;;
         esac
-        echo ${ansible_append_flags[*]}
     done
 }
 
