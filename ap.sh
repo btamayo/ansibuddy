@@ -159,7 +159,9 @@ find_playbook_in_paths() {
 # Check if path is absolute
 parse_playbook_arg() {
 
-    if [[ "$passed_playbook_file_name" = /* ]]; then
+    if [[ ! -z "$playbook_file_set_by_user" ]]; then
+        playbook_final_path="$playbook_final_path"
+    elif [[ "$passed_playbook_file_name" = /* ]]; then
         playbook_final_path=$passed_playbook_file_name
     
     elif [[ "$passed_playbook_file_name" = ./* ]]; then
@@ -223,7 +225,9 @@ parse_args() {
     if [[ -z "$hostgroup" ]]; then
         usage "ERROR: Missing hostgroup"
         exit 1;
-    elif [[ "$hostgroup" == "-i" ]]; then
+    fi
+    
+    if [[ "$hostgroup" == "-i" ]]; then
         # Pass in inventory file
         shift;
         inventory_file="$1"

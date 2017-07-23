@@ -50,6 +50,8 @@
 # ./ap.sh bianca-blog.dev check
 # ./ap.sh bianca-blog.dev playbooks/play.yml
 
+# Multiple "remainder args"
+
 
 # If it's not a found file, it might be a host address?
 # e.g. 127.0.0.1, 54.123.1412.randomhost.com, localhost, digitaloceanbox
