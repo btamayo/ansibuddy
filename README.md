@@ -33,7 +33,8 @@ $ ./ap.sh <hostgroup> (<playbook> | -i <playbook-file>) [<command>...] ...
 
 ## To Do:
 
-- Move test to `/test` dir
+- Proper argument parsing
+- Move tests to `/test` dir
 - Subcommands e.g.:
 	- `setup`: sets up the machine
 	- `install`: installs the app or service
@@ -47,13 +48,14 @@ $ ./ap.sh <hostgroup> (<playbook> | -i <playbook-file>) [<command>...] ...
 	- [bats-assert](https://github.com/ztombol/bats-assert)
 	- [bats-support](https://github.com/ztombol/bats-support)
 
-Generating tests:
+### Generating tests:
 
 The point of generating the Bats tests file is to generate it once, validate your tests by eye, and then run the tests.
 
 - Write a spec in `test/spec.yml`
 - Run `test/bats-test-gen.py` to print your tests to stdout
 - Run `bats-test-gen-run.sh` to generate and run your tests automatically (uses a file called `test_gen_ap.bats`)
+
 
 
 ```shell
