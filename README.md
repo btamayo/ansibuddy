@@ -14,46 +14,42 @@ $ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) 
 ```
 
 #### `hostgroup`:
-	- General format(s): `<service>.<environment>.<host group>` e.g. `myblog.dev.docker`
+  - General format(s): `<service>.<environment>.<host group>` e.g. `myblog.dev.docker`
 
 #### `inventory-file`:
-	- Pass in an inventory file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Inventory files passed in with the `-i` flag always takes precedence over `<hostgroup>` and should not be passed together.
+  - Pass in an inventory file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Inventory files passed in with the `-i` flag always takes precedence over `<hostgroup>` and should not be passed together.
 
 #### `playbook`:
-	- @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
+  - @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
 
 #### `playbook-file`:
-	- Pass in a playbook file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Playbook files passed in with the `-p` flag always takes precedence over `<playbook>` and should not be passed together.
+  - Pass in a playbook file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Playbook files passed in with the `-p` flag always takes precedence over `<playbook>` and should not be passed together.
 
 #### `command`:
-	- `check`: Run a syntax check (`ansible-playbook ... --syntax-check`)
-	- `list-hosts`: List the affected hosts of this playbook run (`ansible-playbook ... --list-hosts`)
-	- `help`: Display usage
+  - `check`: 
+    - Run a syntax check (`ansible-playbook ... --syntax-check`)
+  - `list-hosts`: 
+    - List the affected hosts of this playbook run (`ansible-playbook ... --list-hosts`)
+  - `help`: Display usage
 
 
-`ansible-playbook-args`: Pass other ansible-playbook args. You must separate between ansibuddy arguments and ansible-playbook args using `--`. If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts`, ansibuddy will defer to those args instead.
+`ansible-playbook-args`: 
+  - Pass other ansible-playbook args. **You must separate between Ansibuddy arguments and ansible-playbook args using `--`**. 
+  - If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts` through `ansible-playbook-args`, Ansibuddy will defer to those args instead.
 
-For example, running:
+For example, running "`bianca-blog.dev.docker site.yml -- -l webservers`" will give you `-l webservers` despite `docker` being provided as the `group name` into Ansibuddy:
 
 ```
 ./ap bianca-blog.dev.docker site.yml -- -l webservers
-```
 
-Will give you `-l webservers` despite `docker` being provided as the `group name` into Ansibuddy:
-
-```
 [EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l webservers
 ```
 
-And running:
+However, using `/ap.sh bianca-blog.dev.docker site.yml` without the `-- l webservers` parameter will limit it to the docker group hosts.
 
 ```
-/ap.sh bianca-blog.dev.docker site.yml
-```
+./ap.sh bianca-blog.dev.docker site.yml
 
-is equivalent to:
-
-```
 [EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l docker
 ```
 
@@ -63,9 +59,9 @@ is equivalent to:
 
 - Proper argument parsing
 - Subcommands e.g.:
-	- `setup`: sets up the machine
-	- `install`: installs the app or service
-	- `deploy`: configures components on the host(s) for the app
+    - `setup`: sets up the machine
+    - `install`: installs the app or service
+    - `deploy`: configures components on the host(s) for the app
 
 
 ## Testing
@@ -75,8 +71,8 @@ To test bash scripts, we use [bats](https://github.com/sstephenson/bats), then g
 ### To run the tests:
 - Install [bats](https://github.com/sstephenson/bats) first.
 - Install the submodules if needed:
-	- [bats-assert](https://github.com/ztombol/bats-assert)
-	- [bats-support](https://github.com/ztombol/bats-support)
+    - [bats-assert](https://github.com/ztombol/bats-assert)
+    - [bats-support](https://github.com/ztombol/bats-support)
 
 ### Generating tests:
 
