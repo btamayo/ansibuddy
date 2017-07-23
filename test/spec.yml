@@ -13,7 +13,7 @@
 # DEBUG: Additional options: bianca-blog.dev.app site.yml check list-hosts
 # DEBUG: Parsed env_name, service_name: bianca-blog, dev
 # DEBUG: Parsed groupname in host: app
-
+# DEBUG: Playbook found in: $playbook_final_path
 # DEBUG: Looking for inventory in: ./inventories/bianca-blog/dev
 # DEBUG: Playbook file:
 
@@ -54,5 +54,3 @@ tests:
     playbook: site.yml
     commands: check list-hosts
     expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
-
-

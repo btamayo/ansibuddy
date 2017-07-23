@@ -19,6 +19,7 @@ ansible_append_flags=()
 remainder_args=()
 
 # @TODO: Bianca Tamayo (Jul 22, 2017) - Make unnecessary
+echo $PWD
 if [[ $ansible_project_base != "." ]]; then
     echo "FATAL: Current directory should be project root (where ap.sh is). Paths may resolve incorrectly otherwise."
     exit 1
@@ -248,6 +249,7 @@ parse_args() {
 
 # ------- MAIN  -------
 
+debug "DEBUG: [PWD]" "$PWD"
 debug "DEBUG: [INPUT]" "$@"
 
 # Begin parse

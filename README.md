@@ -14,7 +14,7 @@ $ ./ap.sh <hostgroup> (<playbook> | -i <playbook-file>) [<command>...] ...
 ```
 
 `hostgroup`:
-	- General format(s): `<service>.<environment>.<hostgroup>` e.g. `myblog.dev.docker`
+	- General format(s): `<service>.<environment>.<host group>` e.g. `myblog.dev.docker`
 
 `playbook`:
 	- @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
