@@ -246,9 +246,6 @@ parse_args() {
     done
 }
 
-
-
-
 # ------- MAIN  -------
 
 debug "DEBUG: [INPUT]" "$@"
@@ -290,6 +287,7 @@ debug "DEBUG: Playbook file: $passed_playbook_file_name"
 
 debug ""
 
+# TODO: Bianca Tamayo (Jul 22, 2017) - Add uppress prompt
 while true; do
     read -p "Continue? " yn
     case $yn in
@@ -299,6 +297,5 @@ while true; do
     esac
 done
 
-# TODO: Bianca Tamayo (Jul 22, 2017) - Add prompt and suppress prompt
 
 # End of file

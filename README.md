@@ -1,49 +1,51 @@
-## Ansible Wrapper
+## Ansibuddy: An Ansible-Playbook Wrapper
 
-**[WIP]**
-I gave up and did this.
-Ansible wrapper for my own projects. 
+**[WIP] Do not use.**
+
+**Background:** I gave up and did this. I was trying to avoid writing a wrapper script, but it seems like it makes things much easier.
+
+Ansible wrapper for my own projects. This requires a specific directory structure.
 
 
+## Usage
 
 ```bash
-$ ./ap.sh <HOSTGROUP> <PLAYBOOK> [<COMMAND>] ...
+$ ./ap.sh <hostgroup> (<playbook> | -i <playbook-file>) [<command>...] ...
 ```
 
-`HOSTGROUP`:
-	- General format(s): `<service>.<environment>` e.g. `<bianca-blog>.<production>`
+`hostgroup`:
+	- General format(s): `<service>.<environment>.<hostgroup>` e.g. `myblog.dev.docker`
 
-`PLAYBOOK`:
-	- path to playbook from root
+`playbook`:
+	- @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
 
-`??? TODO`:
-	- `setup`: sets up the machine
-	- `install`: installs the app or service
-	- `deploy`: configures components on the host(s) for the app
+`playbook-file`: 
+	- Path to a playbook file from root. Script does not check for file's existence.
 
-`COMMAND`:
-	- check
-	- list-hosts
-	- help
+`command`:
+	- `check`: Run a syntax check (`ansible-playbook ... --syntax-check`)
+	- `list-hosts`: List the affected hosts of this playbook run (`ansible-playbook ... --list-hosts`)
+	- `help`: Display usage
 
 `OPTIONS`: Other ansible-playbook options 
 
 `ARGS`: Treat other args like other ansible-playbook args
 
+## To Do:
 
-### Other:
-
-Development: Using nodemon (it won't watch files unless you specify, but you can use `rs` easily):
-
-```shell
-$ nodemon --exec "./ap.sh bianca-blog.dev.app check || true"
-```
-
-Development: Testing ./ap.sh
+- Move test to `/test` dir
+- Subcommands e.g.:
+	- `setup`: sets up the machine
+	- `install`: installs the app or service
+	- `deploy`: configures components on the host(s) for the app
 
 
-- Install bats first.
-- Install the submodules
+## Testing
+
+- Install [bats](https://github.com/sstephenson/bats) first.
+- Install the submodules if needed:
+	- [bats-assert](https://github.com/ztombol/bats-assert)
+	- [bats-support](https://github.com/ztombol/bats-support)
 
 Generating tests:
 
@@ -57,3 +59,12 @@ The point of generating the Bats tests file is to generate it once, validate you
 ```shell
 $  ./test_ap.bats
 ```
+
+## Other:
+
+Snippet: Using nodemon (it won't watch files unless you specify, but you can use `rs` easily):
+
+```shell
+$ nodemon --exec "./ap.sh bianca-blog.dev.app check || true"
+```
+
