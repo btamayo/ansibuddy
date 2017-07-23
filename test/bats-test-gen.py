@@ -25,7 +25,7 @@ load_lib bats-assert
 
 TEST_TEMPLATE = """
 @test "{description} [{commands}]" {{
-    run ./ap.sh {hostgroup} {playbook} {commands}
+    run ./ap.sh {hostgroup} {playbook} debug {commands}
     {assert_type} "{expected}"
 }}
 """
