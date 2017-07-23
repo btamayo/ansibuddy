@@ -9,7 +9,7 @@ inventory_base_dir=$ansible_project_base/$inventory_dir_name
 playbook_base_dir=$ansible_project_base/$playbook_dir_name
 
 # Defaults
-default_playbook_file_name="site.yml"
+# default_playbook_file_name="site.yml"
 
 # Script-specific commands like "check", "help", and "list-hosts"
 ansible_append_flags=()
@@ -42,7 +42,21 @@ usage() {
     echo "$help_text"
 }
 
-find_inventory() {
+find_inventory_in_paths() {
+
+    if [[ ! -d "$hostsfile_find_path" ]]; then
+        echo "DEBUG: $hostsfile_find_path does not exist"
+    elif [[ -d "$hostsfile_find_path" && ! -f "$hostsfile_find_path/hosts" ]]; then
+        echo "DEBUG: hosts file in $hostsfile_find_path does not exist"
+    elif [[ -f "$hostsfile_find_path/hosts" ]]; then
+        echo "DEBUG: Found hosts file in $hostsfile_find_path/hosts"
+    fi
+
+    # If it does exist, we're still gonna assign it and let ansible fail. ^ is for debugging only.
+    hostsfile_final_path="$hostsfile_find_path/hosts"
+}
+
+parse_inventory_arg() {
     # Parse hostgroup name
     IFS='.' read -ra tokens <<< "$hostgroup"
 
@@ -58,23 +72,28 @@ find_inventory() {
 
         # Remove first two els
         grp=("${tokens[@]:2}")
+
+        hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
+
+        echo "INFO: Finding group [${grp[*]}] in $hostsfile_find_path/hosts"
+
+        find_inventory_in_paths
+
+
+    elif [[ "${#tokens[@]}" -eq 1 ]]; then
+        # Just the service name or the env name for single projects
+
+        # e.g. bianca-blog/hosts
+        # e.g. dev/hosts
+
+        # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle custom inv files?
+
+        dir_name="${tokens[0]}"
+        hostsfile_find_path="$inventory_base_dir/$dir_name"
+
+        find_inventory_in_paths
     fi
 
-    hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
-
-    echo "INFO: Finding group [${grp[*]}] in $hostsfile_find_path/hosts"
-
-    if [[ ! -d "$hostsfile_find_path" ]]; then
-        echo "DEBUG: $hostsfile_find_path does not exist."
-        parsed_hostgroup="$hostgroup"
-    fi
-
-    if [[ -d "$hostsfile_find_path" && ! -f "$hostsfile_find_path/hosts" ]]; then
-        echo "DEBUG: hosts file in $hostsfile_find_path does not exist."
-        parsed_hostgroup="$hostgroup"
-    fi
-
-    hostsfile_final_path="$hostsfile_find_path"
     # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle cases like this: bianca-blog.dev.docker.webserver
     # bianca-blog.dev.docker&webserver
     # bianca-blog.dev&stage.docker&webserver
@@ -103,7 +122,7 @@ find_playbook_in_paths() {
 }
 
 # Check if path is absolute
-parse_playbook_path() {
+parse_playbook_arg() {
 
     if [[ "$passed_playbook_file_name" = /* ]]; then
         playbook_final_path=$passed_playbook_file_name
@@ -151,8 +170,14 @@ parse_playbook_path() {
     fi
 
     # If it still can't find it, assign the final to the default and don't even bother checking if it's a file
+    # if [[ ! -f "$playbook_final_path" ]]; then
+    #     playbook_final_path="$default_playbook_file_name"
+    # fi
+
     if [[ ! -f "$playbook_final_path" ]]; then
-        playbook_final_path="$default_playbook_file_name"
+        usage "FATAL: No playbook ${passed_playbook_file_name} found"
+        # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
+        exit 1
     fi
 }
 
@@ -169,7 +194,7 @@ parse_args() {
     if [[ "$#" == 0 ]]; then
         # @TODO: Bianca Tamayo (Jul 22, 2017) - This contradicts the behavior of the default 'site.yml' playbook
         # since it can be ran with ./ap hostname 
-        usage "Error: Missing action";
+        usage "Error: Missing playbook";
         exit 0;
     fi
 
@@ -177,7 +202,6 @@ parse_args() {
         case "$1" in
             help)
                 usage
-
                 exit 0
                 ;;
             check) ansible_append_flags+=("--syntax-check")
@@ -210,13 +234,13 @@ echo "DEBUG: Passed playbook name or path: $passed_playbook_file_name"
 echo "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
 
 # Begin logic
-find_inventory
+parse_inventory_arg
 
 # Find a playbook directory that has the same name as the service name
 
 # If the playbook is specified and named exactly the same as the playbook in the directory, choose that play
 # e.g. ./playbooks/bianca-blog.yml > ./playbooks/bianca-blog/bianca-blog.yml > ./playbooks/bianca-blog/site.yml
-parse_playbook_path
+parse_playbook_arg
 
 # ---------------------
 
