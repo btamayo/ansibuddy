@@ -1,0 +1,57 @@
+
+# DEBUG: [INPUT] bianca-blog.dev.app site.yml check list-hosts
+
+# DEBUG: Passed hostgroup: bianca-blog.dev.app
+# DEBUG: Passed playbook name or path: site.yml
+# DEBUG: Passed Commands: --syntax-check --list-hosts
+# INFO: Looking for group: bianca-blog.dev.app
+# INFO: Finding group [app] in ./inventories/bianca-blog/dev/hosts
+# DEBUG: Playbook not found in: ./playbooks/bianca-blog.yml
+# DEBUG: Playbook not found in: ./playbooks/bianca-blog.yaml
+# DEBUG: Playbook not found in: ./playbooks/bianca-blog
+# DEBUG: Playbook not found in: ./playbooks/bianca-blog/bianca-blog
+# DEBUG: Additional options: bianca-blog.dev.app site.yml check list-hosts
+# DEBUG: Parsed env_name, service_name: bianca-blog, dev
+# DEBUG: Parsed groupname in host: app
+
+# DEBUG: Looking for inventory in: ./inventories/bianca-blog/dev
+# DEBUG: Playbook file:
+
+# DEBUG: [FINAL]: ansible-playbook -i ./inventories/bianca-blog/dev site.yml --syntax-check --list-hosts
+
+
+hostgroup: bianca-blog.dev.app
+type: assert_line
+
+tests:
+  - description: Parse hostgroup correctly
+    playbook: ""
+    commands: ""
+    expected: "DEBUG: Passed hostgroup: bianca-blog.dev.app"
+
+  - description: Parse playbook name or path correctly
+    playbook: "site-a.yml"
+    commands: ""
+    expected: "DEBUG: Passed playbook name or path: site-a.yml"
+
+  - description: Parse playbook name or path correctly with two commands
+    playbook: "site-a.yml"
+    commands: check list-hosts
+    expected: "DEBUG: Passed playbook name or path: site-a.yml"
+
+  - description: Parse playbook name or path correctly with two commands
+    playbook: "site-a.yml"
+    commands: check list-hosts
+    expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
+
+  - description: Parse & convert one script command correctly
+    playbook: ""
+    commands: check
+    expected: "DEBUG: Passed Commands: --syntax-check"
+
+  - description: Parse & convert two script commands correctly
+    playbook: ""
+    commands: check list-hosts
+    expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
+
+
