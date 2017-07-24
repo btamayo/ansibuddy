@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/btamayo/ansibuddy.svg?branch=master)](https://travis-ci.org/btamayo/ansibuddy)
+
 ## Ansibuddy: An Ansible-Playbook Wrapper
 
 **[WIP] Do not use.**
