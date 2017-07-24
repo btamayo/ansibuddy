@@ -419,15 +419,15 @@ debug "."
 debug "DEBUG: Playbook file: $passed_playbook_file_name"
 debug "."
 
-# TODO: Bianca Tamayo (Jul 22, 2017) - Add uppress prompt
-# while true; do
-#     read -p "Continue? " yn
-#     case $yn in
-#         [Yy]* ) $playbook_command; break;;
-#         [Nn]* ) exit;;
-#         * ) echo "Please answer yes or no.";;
-#     esac
-# done
+# TODO: Bianca Tamayo (Jul 22, 2017) - Add suppress prompt
+while true; do
+    read -p "Continue? " yn
+    case $yn in
+        [Yy]* ) $playbook_command; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
 
 
 # End of file
