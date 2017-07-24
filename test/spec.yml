@@ -63,7 +63,15 @@ tests:
     commands: -b example-1 check list-hosts
     regex: '^DEBUG: Updated base path to: .*\/example-1[\/]?$'
 
-  
+  # DEBUG: Playbook not found in: ./playbooks/bianca-blog/bianca-blog
+  # DEBUG: Playbook found in: $playbook_final_path
+
+  - description: Find correct playbook
+    hostgroup: bianca-blog.dev.docker
+    playbook: site.yml
+    commands: -b example-1 -- 
+    regex: '^DEBUG: Playbook found in: .+(playbooks\/bianca-blog\/site.yml)+$'
+
   - description: Shouldn't be a docker in the exec line if it's overridden by passed in flag
     hostgroup: bianca-blog.dev.docker
     commands: -b example-1 -- -l somerandomserver
