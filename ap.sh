@@ -296,8 +296,7 @@ parse_args() {
             list-hosts) ansible_append_flags+=("--list-hosts")
                 shift
                 ;;
-            --)
-                shift; break; shift;; # TODO: Bianca Tamayo (Jul 24, 2017) - this hangs if there's -- but no args after
+            --) shift; break; shift;;
             *) shift;;
         esac
     done

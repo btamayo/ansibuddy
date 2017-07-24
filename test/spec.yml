@@ -72,6 +72,12 @@ tests:
     commands: -b example-1
     regex: '^DEBUG: Playbook found in: .+(playbooks\/bianca-blog\/site.yml)+$'
 
+  - description: Don't hang if -- is present w/ no input
+    hostgroup: bianca-blog.dev
+    commands: -b example-1 -- 
+    assert_type: refute_line
+    regex: '[EXEC]: (docker)+$'
+
   - description: Shouldn't be a docker in the exec line if it's overridden by passed in flag
     hostgroup: bianca-blog.dev.docker
     commands: -b example-1 -- -l somerandomserver
