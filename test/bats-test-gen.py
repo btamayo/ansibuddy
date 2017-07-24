@@ -42,6 +42,8 @@ def generate_tests(suite):
         if 'regex' in test:
             test['regexflag'] = '--regexp'
             test['expected'] = test['regex']
+        else:
+            test['regexflag'] = ""
 
         if 'hostgroup' in test:
             hostgroup = test['hostgroup']
