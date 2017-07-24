@@ -45,7 +45,7 @@ For example, running "`bianca-blog.dev.docker site.yml -- -l webservers`" will g
 [EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l webservers
 ```
 
-However, using `/ap.sh bianca-blog.dev.docker site.yml` without the `-- l webservers` parameter will limit it to the docker group hosts.
+However, using `/ap.sh bianca-blog.dev.docker site.yml` without the `-- -l webservers` parameter will limit it to the docker group hosts.
 
 ```
 ./ap.sh bianca-blog.dev.docker site.yml

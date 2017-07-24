@@ -44,6 +44,10 @@ remainder_args=()
 # @SEE: https://github.com/ansible/proposals/issues/35 for possible ansible integration
 
 # Functions
+debug() {
+    if [[ "$debug_mode" == "true" ]]; then echo "$@"; fi
+}
+
 update_paths() {
     local passed_base_dir="$1"
 
@@ -60,15 +64,11 @@ update_paths() {
         echo "WARN: $base_folder non-existent path or file"
     fi
 
-    debug "DEBUG: Updated base folder: $base_folder"
+    echo "DEBUG: Updated base folder: $base_folder"
 
     # TODO: Bianca Tamayo (Jul 23, 2017) - This can cause double // in prints, etc. affects polish
     inventory_base_dir=$base_folder/$inventory_dir_name
     playbook_base_dir=$base_folder/$playbook_dir_name
-}
-
-debug() {
-    if [[ "$debug_mode" == "true" ]]; then echo "$@"; fi
 }
 
 usage() {
@@ -297,7 +297,8 @@ parse_args() {
                 shift
                 ;;
             --)
-                shift; break; shift;;
+                shift; break; shift;; # TODO: Bianca Tamayo (Jul 24, 2017) - this hangs if there's -- but no args after
+            *) shift;;
         esac
     done
 
@@ -420,6 +421,8 @@ debug "DEBUG: Playbook file: $passed_playbook_file_name"
 debug "."
 
 # TODO: Bianca Tamayo (Jul 22, 2017) - Add suppress prompt
+if [[ "$debug_mode" == "true" ]]; then exit 0; fi
+
 while true; do
     read -p "Continue? " yn
     case $yn in

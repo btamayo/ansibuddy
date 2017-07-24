@@ -22,7 +22,7 @@
 # Python converts undefineds to "None" so for ease just defined it here as "" for now
 
 hostgroup: bianca-blog.dev.app
-type: assert_line
+assert_type: assert_line
 
 tests:
   # Parsing
@@ -61,7 +61,7 @@ tests:
   - description: Update basepath correctly 
     playbook: site.yml
     commands: -b example-1 check list-hosts
-    regex: '^DEBUG: Updated base path to: .*\/example-1[\/]?$'
+    regex: '^DEBUG: Updated base folder: .*\/example-1[\/]?$'
 
   # DEBUG: Playbook not found in: ./playbooks/bianca-blog/bianca-blog
   # DEBUG: Playbook found in: $playbook_final_path
@@ -69,19 +69,19 @@ tests:
   - description: Find correct playbook
     hostgroup: bianca-blog.dev.docker
     playbook: site.yml
-    commands: -b example-1 -- 
+    commands: -b example-1
     regex: '^DEBUG: Playbook found in: .+(playbooks\/bianca-blog\/site.yml)+$'
 
   - description: Shouldn't be a docker in the exec line if it's overridden by passed in flag
     hostgroup: bianca-blog.dev.docker
     commands: -b example-1 -- -l somerandomserver
-    type: refute_line
+    assert_type: refute_line
     regex: '[EXEC]: (docker)+$'
   
   - description: Get passed in override correctly
     hostgroup: bianca-blog.dev.docker
     commands: -b example-1 -- -l somerandomserver
-    type: refute_line
+    assert_type: refute_line
     regex: '[EXEC]: (-l somerandomserver)+$'
 
   - description: Limit to docker correctly

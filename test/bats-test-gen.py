@@ -7,6 +7,7 @@ import pprint
 import traceback
 import yaml
 
+TEMPLATE_KEYS = ['description', 'hostgroup', 'playbook', 'commands', 'assert_type', 'partial', 'regexflag', 'expected']
 
 DOC_HEADER = """#!/usr/bin/env bats
 
@@ -21,13 +22,22 @@ load_lib bats-assert
 # ----------------------------------------------------------------
 """
 
-
-
-TEST_TEMPLATE = """@test "{description} [{hostgroup} {playbook} {commands}]" {{
+TEST_TEMPLATE = """@test "[{hostgroup} {playbook} {commands}]" {{
     run ./ap.sh {hostgroup} {playbook} {commands} debug
     {assert_type} {partial} {regexflag} "{expected}"
 }}
 """
+
+def override_key(overrider, overriden):
+    for key in overrider:
+        if key in overriden:
+            overriden[key] = overrider[key]
+
+    for req in TEMPLATE_KEYS:
+        if req not in overrider:
+            overrider[req] = overriden[req] if req in overriden else ""
+
+    return overrider
 
 
 def generate_tests(suite):
@@ -35,27 +45,15 @@ def generate_tests(suite):
 
     for test in tests:
         if 'partial' in test:
-            test['partial'] = '--partial'
-        else:
-            test['partial'] = ""
+            test['partial'] = "--partial"
 
         if 'regex' in test:
             test['regexflag'] = '--regexp'
             test['expected'] = test['regex']
-        else:
-            test['regexflag'] = ""
 
-        if 'hostgroup' in test:
-            hostgroup = test['hostgroup']
-        else:
-            hostgroup = suite['hostgroup']
+        test = override_key(test, suite) # Override the rest
 
-        if 'type' in test:
-            assert_type = test['assert_type']
-        else:
-            assert_type = suite['type']
-
-        test = TEST_TEMPLATE.format(hostgroup=hostgroup, assert_type=assert_type, **test)
+        test = TEST_TEMPLATE.format(**test)
         print test
 
 
