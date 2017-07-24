@@ -63,10 +63,24 @@ tests:
     commands: -b example-1 check list-hosts
     regex: '^DEBUG: Updated base path to: .*\/example-1[\/]?$'
 
+  
+  - description: Shouldn't be a docker in the exec line if it's overridden by passed in flag
+    hostgroup: bianca-blog.dev.docker
+    commands: -b example-1 -- -l somerandomserver
+    type: refute_line
+    regex: '[EXEC]: (docker)+$'
+  
+  - description: Get passed in override correctly
+    hostgroup: bianca-blog.dev.docker
+    commands: -b example-1 -- -l somerandomserver
+    type: refute_line
+    regex: '[EXEC]: (-l somerandomserver)+$'
 
-
-
-
+  - description: Limit to docker correctly
+    hostgroup: bianca-blog.dev.docker
+    playbook: site.yml
+    commands: -b example-1
+    regex: '[EXEC]: .+(-l docker)+$'
 
 
 

@@ -31,8 +31,6 @@ TEST_TEMPLATE = """@test "{description} [{hostgroup} {playbook} {commands}]" {{
 
 
 def generate_tests(suite):
-    hostgroup = suite['hostgroup']
-    assert_type = suite['type']
     tests = suite['tests']
 
     for test in tests:
@@ -44,6 +42,16 @@ def generate_tests(suite):
         if 'regex' in test:
             test['regexflag'] = '--regexp'
             test['expected'] = test['regex']
+
+        if 'hostgroup' in test:
+            hostgroup = test['hostgroup']
+        else:
+            hostgroup = suite['hostgroup']
+
+        if 'type' in test:
+            assert_type = test['assert_type']
+        else:
+            assert_type = suite['type']
 
         test = TEST_TEMPLATE.format(hostgroup=hostgroup, assert_type=assert_type, **test)
         print test
