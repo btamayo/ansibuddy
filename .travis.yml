@@ -1,0 +1,12 @@
+language: bash
+before_install:
+- "./test/scripts/install-bats.sh"
+install:
+- pip install pyyaml
+before_script:
+- export PATH="${HOME}/.local/bin:${PATH}"
+script:
+- "./test/run-tests.sh"
+notifications:
+  slack:
+    secure: d7O8moXOTl+AFXuIPR8oiKNYr/d+3qOLljwsk5T5q6hxrnfgCtX2T/FP8vRDSc4BY2QG9udzy9h+aYnI3TC4KY3TuE9X03rAT3G4dAGM7ju3Z+qyGdoHlRleG/x/XuV6wHy/SsPUY3Hakc4moZmmvOyshzDfP8Uw38kQAFzelODWKU8LO+DhRl0WtUh0cmJnxG2rNz/63KE5bwoah6YtnkehAEWVOFQdvwOe5uo9GinZ2RIPEYT3sJggJuk3LVoZ1+W/pm44DbEJ+Mt/gJKbsMBscrkvECi8poEStKAhVenRDV3Z6Tea22EmmCicyT1ZfCBBBgI/2OTP/M+2I+mHu5hkGvHdIhVU+WAjWSCVfg8BtRcCvanqkcmrR+UjWtQaLRFuHsX0kIL1iimSv57MkzLO8LAXUc42BUbDlahqsnY1AjCX6hW3lEfIWLpJk7TpnqO8Rv9BQ5pkwMA4mbHJlknc9gilIQNbIV6m1CRWH4L8kOIJO917knBfoojGU1vhgHFysmwokNICAPhgHQT3LLMuD2fjMtAUrsiR1rt4rAjNCL3Gb0/uPjS2hqGb6V/TQzNKl+PPoK/lXqiukFIASt/j+klKYnjzaoCRMvFIorXcZaFiD23P1AglPCHXjrO4x8gqaQKm9ZqsnQV1hPGn7mETIoPfP3M32rn+NqggTJI=
