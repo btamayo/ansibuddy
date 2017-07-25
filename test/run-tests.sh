@@ -34,11 +34,14 @@ chmod +x "${path_temp_dir_full}/generated_tests.bats"
 
 
 while IFS= read -d $'\0' -r foldername ; do 
-    cp -r $foldername ${path_temp_dir_full}/
+    cp -r "$foldername" "${path_temp_dir_full}/"
 done < <(find ./${example_dir_name} -mindepth 1 -maxdepth 1 -type d -print0 -name "example-*")
 
 # CD to ensuure the rel paths are right
 cd "${path_temp_dir_full}" || exit
 ./generated_tests.bats
 
+code="$?"
+
 rm -rf "${path_temp_dir_full}"
+exit $code

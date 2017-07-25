@@ -59,7 +59,7 @@ However, using `/ap.sh bianca-blog.dev.docker site.yml` without the `-- -l webse
 
 ## To Do:
 
-- Proper argument parsing
+- Integrate with [argbash](https://github.com/matejak/argbash)
 - Subcommands e.g.:
     - `setup`: sets up the machine
     - `install`: installs the app or service
