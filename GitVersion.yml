@@ -1,0 +1,33 @@
+mode: ContinuousDelivery
+next-version: 0.1.0
+branches:
+  stable:
+    mode: ContinuousDelivery
+    tag: ''
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+  master:
+    mode: ContinuousDeployment
+    tag: alpha
+    increment: Minor
+  features?[/-]:
+    mode: ContinuousDelivery
+    increment: Patch
+    tag: useBranchName
+  features?[/-]:
+    mode: ContinuousDelivery
+    increment: Patch
+    tag: useBranchName
+  stage:
+    mode: ContinuousDelivery
+    tag: rc
+    increment: Patch
+  (r|releases?)[\/-]:
+    mode: ContinuousDelivery
+    tag: rc
+    increment: Patch
+  hotfix(es)?[/-]:
+    tag: beta
+    increment: Patch
+ignore:
+  sha: []
