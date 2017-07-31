@@ -97,6 +97,11 @@ tests:
     regex: '[EXEC]: .+(-l docker)+$'
 
 
+  - description: Not passing a hostgroup at all, and just a playbook should run with default -i hosts arg.
+    hostgroup: ""
+    playbook: site.yml
+    commands: -b example-1
+    regex: '[EXEC]: .+(-i hosts)+$'
 
 
 

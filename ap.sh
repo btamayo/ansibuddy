@@ -245,6 +245,14 @@ parse_playbook_arg() {
 
 
 parse_args() {
+    # @TODO: Bianca Tamayo (Jul 30, 2017) -  
+    # The way this is done right now is strictly positional. 
+    # However, it should be that the following: -i <val> -p site.yml should be treated as a 
+    # required missing positional arg -i rather than
+    # -p as a hostgroup and site.yml as a playbook name.
+    # This could possibly be obviated once argbash is integrated.
+    # Either way, the entire arg input should be tokenized properly.
+
     hostgroup="$1"; shift;
 
     if [[ -z "$hostgroup" ]]; then
@@ -276,7 +284,7 @@ parse_args() {
         shift;
     fi
 
-    # TODO: Bianca Tamayo (Jul 23, 2017) - arg parsing w/ short & long opts
+    # TODO: Bianca Tamayo (Jul 23, 2017) - arg parsing w/ short & long opts including -i and -p
     while [ "$#" -gt 0 ]; do
         case "$1" in
             -b|--base)
