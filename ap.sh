@@ -45,7 +45,7 @@ remainder_args=()
 
 # Functions
 debug() {
-    if [[ "$debug_mode" == "true" ]]; then echo "$@"; fi
+    if [[ "$debug_mode" == "true" ]]; then printf "%s\n" "$@"; fi
 }
 
 update_paths() {
@@ -313,17 +313,17 @@ parse_args "$@"
 
 
 debug "DEBUG: [PWD]" "$PWD"
-debug "."
+debug ""
 debug "DEBUG: Passed hostgroup: $hostgroup"
-debug "."
+debug ""
 debug "DEBUG: Inventory path invoked with -i if any: $inventory_file"
-debug "."
+debug ""
 debug "DEBUG: Playbook path invoked with -p if any: $playbook_file_set_by_user" 
-debug "."
+debug ""
 debug "DEBUG: Passed playbook name or path: $passed_playbook_file_name"
-debug "."
+debug ""
 debug "DEBUG: Base path is: $base_folder"
-debug "."
+debug ""
 debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
 
 
@@ -413,11 +413,11 @@ debug "DEBUG: Additional options:" "${remainder_args[*]}"
 
 # debug "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
 debug "DEBUG: Parsed groupname in host:" "${grp[@]}"
-debug "."
+debug ""
 # debug "DEBUG: Looking for inventory in: $hostsfile_find_path"
-debug "."
+debug ""
 debug "DEBUG: Playbook file: $passed_playbook_file_name"
-debug "."
+debug ""
 
 # TODO: Bianca Tamayo (Jul 22, 2017) - Add suppress prompt
 if [[ "$debug_mode" == "true" ]]; then exit 0; fi
