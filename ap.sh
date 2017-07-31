@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Ansibuddy: https://github.com/btamayo/ansibuddy
+# Play: https://github.com/btamayo/play
 # MIT License
 
 # Copyright (c) 2017 Bianca Tamayo
