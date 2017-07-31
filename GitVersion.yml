@@ -7,13 +7,13 @@ branches:
     increment: Patch
     prevent-increment-of-merged-branch-version: true
   master:
-    mode: ContinuousDeployment
-    tag: alpha
+    mode: ContinuousDelivery
+    tag: beta
     increment: Minor
   features?[/-]:
     mode: ContinuousDelivery
-    increment: Patch
     tag: useBranchName
+    increment: Patch
   stage:
     mode: ContinuousDelivery
     tag: rc
@@ -25,5 +25,8 @@ branches:
   hotfix(es)?[/-]:
     tag: beta
     increment: Patch
+  dev(elop)?(ment)?$:
+    mode: ContinuousDeployment
+    tag: alpha
 ignore:
   sha: []
