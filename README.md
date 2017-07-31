@@ -1,6 +1,8 @@
-[![Build Status](https://travis-ci.org/btamayo/play.svg?branch=master)](https://travis-ci.org/btamayo/play)
+
 
 ## Play (a.k.a Ansibuddy!): An Ansible-Playbook Wrapper
+
+[![Build Status](https://travis-ci.org/btamayo/play.svg?branch=master)](https://travis-ci.org/btamayo/play) [![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)](https://github.com/btamayo/play)
 
 **[WIP] Do not use.**
 
@@ -82,3 +84,8 @@ To test bash scripts, we use [bats](https://github.com/sstephenson/bats), then g
 2. Run `test/run-tests.sh`.
 
 - `test/run-tests.sh` calls a Python script called `bats-test-gen.py` and relies on stdout and redirection to write to a file in a new, temporary directory called `".tmp-dir"` in the repo root. It copies over necessary files then runs the generated tests within.
+
+
+---
+
+Stability badge(s) from [stability-badges](https://github.com/orangemug/stability-badges).
