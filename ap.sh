@@ -1,443 +1,253 @@
 #!/usr/bin/env bash
 
-# Play: https://github.com/btamayo/play
-# MIT License
+# http://docopt.org/
 
-# Copyright (c) 2017 Bianca Tamayo
+# Functions that start with _ have their echos used by other functions.
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# THE DEFAULTS INITIALIZATION - POSITIONALS
+_positionals=()
+_arg_leftovers=()
+# THE DEFAULTS INITIALIZATION - OPTIONALS
+_arg_inventory_file=
+_arg_playbook_file=
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+long_program_desc="Ansibuddy is a CLI tool for ansible-playbook."
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+leftpad_length="4"
+col_spacing_length="4"
 
-# -------------------------------------------------------------------------------
+stackable_flags="cxs" # These can be stacked as they're flags
 
-# "Constants"
-base_folder=$PWD
-inventory_dir_name="inventories"
-playbook_dir_name="playbooks"
-inventory_base_dir=$base_folder/$inventory_dir_name
-playbook_base_dir=$base_folder/$playbook_dir_name
+arg_help_keys=("<hostgroup>" "<playbook>")
+options_help_keys=("-i <file>, --inventory <file>" "-p <file>, --playbook <file>")
+flags_help_keys=("-x, --debug" "-c, --check" "-s, --list-hosts")
+command_help_keys=("check" "debug" "help" "version" "list-hosts")
+other_keywords_help_keys=("inventory-file" "playbook-file" "ansible-playbook-args" "hostgroup" "playbook")
 
-# Defaults
-# default_playbook_file_name="site.yml"
 
-# Script-specific commands like "check", "help", and "list-hosts"
-ansible_append_flags=()
+# Start general script
 
-# The rest of the args to pass to ansible
-remainder_args=()
+fmt_str_main=
 
-# @SEE: https://github.com/ansible/proposals/issues/35 for possible ansible integration
+declare -a arg_help_keys # Positional named args
+declare -a options_help_keys # Options with args
+declare -a flags_help_keys # Flags
+declare -a action_help_keys  # Actions 
+declare -a command_help_keys # Commands
+declare -a other_keywords_help_keys # Other things that need explaining
 
-# Functions
-debug() {
-    if [[ "$debug_mode" == "true" ]]; then printf "%s\n" "$@"; fi
+# Take in to consideration the locale. Going to assume that we're just doing normal UTF-8. 
+# Useful information for string vs byte length:
+# See: https://stackoverflow.com/questions/17368067/length-of-string-in-bash
+
+# See: https://www.gnu.org/software/bash/manual/bashref.html#Shell-Parameter-Expansion
+# ${#parameter}: The length in characters of the expanded value of parameter is substituted.
+
+# See also: http://mywiki.wooledge.org/Bashism
+
+# Accepts array as param, returns max length of strings in arr
+_find_max_length() {
+	local max=0
+	while [[ $# -gt 0 ]]
+	do	
+		_word="$1"
+		if [[ ${#_word} -gt $max ]]; then max=${#_word}; fi
+		shift;
+	done
+
+	echo "$max"
 }
 
-update_paths() {
-    local passed_base_dir="$1"
-
-    # See if it's an absolute path
-    if [[ "$passed_base_dir" = /* ]]; then
-        base_folder=$passed_base_dir
-    else
-        # Relative to PWD
-        base_folder=$base_folder/$passed_base_dir
-    fi
-
-    # Warn
-    if [[ ! -d "$base_folder" ]]; then
-        echo "WARN: $base_folder non-existent path or file"
-    fi
-
-    echo "DEBUG: Updated base folder: $base_folder"
-
-    # TODO: Bianca Tamayo (Jul 23, 2017) - This can cause double // in prints, etc. affects polish
-    inventory_base_dir=$base_folder/$inventory_dir_name
-    playbook_base_dir=$base_folder/$playbook_dir_name
+# Accepts pad length as param
+_build_col_right() {
+	local fmt_str
+	if [[ ! -z $1 ]]; then fmt_str=$(_build_colspaces "%$1s"); else fmt_str=$(_build_colspaces %-s); fi
+	echo "$fmt_str"
 }
 
-usage() {
-    echo "$1"
-
-    local help_text="
-    USAGE
-        $0 <HOSTGROUP> <PLAYBOOK> [<COMMAND>...] ...
-
-    DESCRIPTION
-        A wrapper script around ansible-playbook
-
-    HOSTGROUP
-        The HOSTGROUP is the group in the inventory file to target
-
-    COMMAND
-        check       Runs syntax-check on determined playbook
-        list-hosts  Lists hosts affected by a playbook
-        help        Print this help
-    "
-
-    echo "$help_text"
+# Accepts pad length as param
+_build_col_left() {
+	local fmt_str
+	if [[ ! -z $1 ]]; then fmt_str=$(_build_colspaces "%-$1s"); else fmt_str=$(_build_colspaces %-s); fi
+	echo "$fmt_str"
 }
 
-find_inventory_in_paths() {
+# Accepts a string as a param. This then surrounds the string
+_build_colspaces() {
+	# Padding length from the left (for indented lines, e.g. non-headers) + max of strs
+	# leftpad_length + find_max_length(section array) + general spacing ($col_spacing_length) + Value String (The actual help string that goes with the keys)
 
-    if [[ ! -d "$hostsfile_find_path" ]]; then
-        debug "DEBUG: $hostsfile_find_path does not exist"
-    elif [[ -d "$hostsfile_find_path" && ! -f "$hostsfile_find_path/hosts" ]]; then
-        debug "DEBUG: hosts file in $hostsfile_find_path does not exist"
-    elif [[ -f "$hostsfile_find_path/hosts" ]]; then
-        debug "DEBUG: Found hosts file in $hostsfile_find_path/hosts"
-    fi
+	# "%4s %15s %s %s\n" "" "<hostgroup>" "Hostgroup you're targeting"
+	
+	local indent=%-"$leftpad_length"s
+	local colspace=%-"$col_spacing_length"s
 
-    # If it does exist, we're still gonna assign it and let ansible fail. ^ is for debugging only.
-    hostsfile_final_path="$hostsfile_find_path/hosts"
+	echo "$indent $1 $colspace %s"
 }
 
-parse_inventory_arg() {
-    if [[ ! -z "$inventory_file" ]]; then
-        # Just go with it and let ansible fail
-        hostsfile_final_path="$inventory_file"
-    else
-        # Parse hostgroup name
-        IFS='.' read -ra tokens <<< "$hostgroup"
-
-        # Try to find a group in the inventory that fits it
-        # /inventories/{service}/{environment}/hosts then save the group
-        # e.g. bianca-blog.dev.docker
-
-        # Needs to be at least two, since we don't just deploy to "bianca-blog"
-        if [[ "${#tokens[@]}" -gt 1 ]]; then
-            # Parse by <service>.<env>
-            service_name="${tokens[0]}"
-            env_name="${tokens[1]}"
-
-            # Remove first two els which are directories (Note that after the first two '.', this converts into parent>child groups. @TODO)
-            grp=("${tokens[@]:2}")
-
-            hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
-
-            find_inventory_in_paths
-
-            debug "INFO: Limiting to host groups [${grp[*]}]"
-
-            # For the rest, make them into groups
-            # playgroups=$(printf ":&%s" "${grp[@]]}")
-            playgroups=${grp}
-
-
-        elif [[ "${#tokens[@]}" -eq 1 ]]; then
-            # Just the service name or the env name for single projects
-
-            # e.g. bianca-blog/hosts
-            # e.g. dev/hosts
-
-            # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle custom inv files?
-
-            dir_name="${tokens[0]}"
-            hostsfile_find_path="$inventory_base_dir/$dir_name"
-
-            find_inventory_in_paths
-        fi
-
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle cases like this: bianca-blog.dev.docker.webserver
-        # bianca-blog.dev.docker&webserver
-        # bianca-blog.dev&stage.docker&webserver
-
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Create generator functions
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Fallback to ansible find path
-    fi
+# Uses the main format string
+_gprintf() {
+	printf "$fmt_str_main" "" "$1" "" "$2" # TODO: Bianca Tamayo (Jul 31, 2017) - Should really improve this later.
 }
 
-# Find playbook
-# If the passed_playbook_file_name looks like a path, 
-# find it in that path first relative to ./playbooks/ then relative to 
-# basedir, unless it's absolute
+# ------------------------------------------------------------------------
 
-find_playbook_in_paths() {
-    local test_path
-
-    for test_path in "${check_file_paths[@]}"; do
-        if [[ -f "$test_path" ]]; then
-            playbook_final_path="$test_path"
-            debug "DEBUG: Playbook found in: $playbook_final_path"
-            break;
-        else
-            debug "DEBUG: Playbook not found in: $test_path"
-        fi
-    done
+print_description_info() {
+	printf "%s\n\n" "$long_program_desc"
 }
 
-# Check if path is absolute
-parse_playbook_arg() {
+# This doesn't need the extra printf formatting
+print_usage_patterns() {
+    printf "Usage:\n" 
+    printf "%${leftpad_length}s %s %s\n" "" "$0" "help"
+    printf "%${leftpad_length}s %s %s\n" "" "$0" "(<hostgroup> | [-i|--inventory] <file>) (<playbook> | [-p|--play] <file>) [<command>...] [-- [ansible-playbook-args]]" 
+}
 
-    if [[ ! -z "$playbook_file_set_by_user" ]]; then
-        playbook_final_path="$playbook_final_path"
-    elif [[ "$passed_playbook_file_name" = /* ]]; then
-        playbook_final_path=$passed_playbook_file_name
+build_help() {
+	local arg_keys=()
+	declare -a arg_keys
+
+	# Lol too much. Plan was to programatically build sections, but ¯\_(ツ)_/¯ maybe later
+	# Quotes are important here since bash arrays are space delimited by default.
+	arg_keys+=("${arg_help_keys[@]}")
+	arg_keys+=("${options_help_keys[@]}")
+	arg_keys+=("${flags_help_keys[@]}")
+	arg_keys+=("${action_help_keys[@]}")
+	arg_keys+=("${command_help_keys[@]}")
+	arg_keys+=("${other_keywords_help_keys[@]}")
+	
+	local mxl
+	local fmt
+
+	mxl=$(_find_max_length "${arg_keys[@]}")
+	fmt=$(_build_col_left "$mxl") # TODO: Bianca Tamayo (Jul 31, 2017) - Change to left?
+
+	fmt_str_main="$fmt\n" # Since we're not changing it by section
+}
+
+
+# Shows the different Usage Patterns
+# The only length factor here is the name of the script
+# Accepts a format string as an argument
+print_help_main() {
+	build_help
+	print_description_info
+	print_usage_patterns
     
-    elif [[ "$passed_playbook_file_name" = ./* ]]; then
-        
-        playbook_find_dir=$passed_playbook_file_name
-
-        # Maybe it's a path to an actual playbook
-        if [[ -f "$playbook_find_dir" ]]; then
-            playbook_final_path=$playbook_find_dir
-        fi
-    
-    else
-        # Start looking relative to playbook base dir, then to $pwd
-
-        # Unless it's in the ansible ignore cfg
-        # ./playbooks/{service_name}.yml > ./playbooks/{service_name}/
-        check_file_paths=( "${playbook_base_dir}/${service_name}.yml" )
-        check_file_paths+=( "${playbook_base_dir}/${service_name}.yaml" )
-
-        service_playbook_base_path="${playbook_base_dir}/${service_name}"
-
-        # Run block
-        find_playbook_in_paths
-
-        # If it found it, good, if not, update the search paths
-        if [[ ! -f "$playbook_final_path" && -d "$service_playbook_base_path" ]]; then
-            check_file_paths=("${service_playbook_base_path}/${service_name}.yml")
-            check_file_paths+=("${service_playbook_base_path}/site.yml")
-
-            # Run block again
-            find_playbook_in_paths
-        fi
-
-        # If it's still not found
-        # Check existence of extensionless playbook files
-        if [[ ! -f "$playbook_final_path" ]]; then
-            check_file_paths=( "${playbook_base_dir}/${service_name}" )
-            check_file_paths+=("${service_playbook_base_path}/${service_name}")
-
-            # Run block again
-            find_playbook_in_paths
-        fi
-    fi
-
-    # If it still can't find it, assign the final to the default and don't even bother checking if it's a file
-    # if [[ ! -f "$playbook_final_path" ]]; then
-    #     playbook_final_path="$default_playbook_file_name"
-    # fi
-
-    if [[ ! -f "$playbook_final_path" ]]; then
-        usage "FATAL: No playbook ${passed_playbook_file_name} found"
-        # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
-        exit 1
-    fi
+    print_options_help
+    print_examples
+    printf "\n\n"
 }
 
+print_options_help ()
+{   
+    printf "\n\n"
+	_gprintf "<hostgroup>" "Hostgroup you're targeting"
+	_gprintf "<playbook>" "Playbook you're targeting"
+    printf "\n"
+    _gprintf "-i <file>, --inventory <file>" "Override hostgroup and pass in inventory file (no default)"
+    _gprintf "-p <file>, --playbook <file>" "Override provided playbook if present and pass in play path (no default)"
+    printf "\n"
+	_gprintf "-x, --debug" "Run in debug mode"
+	printf "\n"
+	_gprintf "-h, --help" "Prints help, then terminate"
+	_gprintf "-v, --version" "Prints version, then terminate"
+    _gprintf "-- <args>" "Delimits between PLAY args and ANSIBLE-PLAYBOOK args"
+	_gprintf "... " "Remainder"
+    printf "\n"
+}
 
-parse_args() {
-    # @TODO: Bianca Tamayo (Jul 30, 2017) -  
-    # The way this is done right now is strictly positional. 
-    # However, it should be that the following: -i <val> -p site.yml should be treated as a 
-    # required missing positional arg -i rather than
-    # -p as a hostgroup and site.yml as a playbook name.
-    # This could possibly be obviated once argbash is integrated.
-    # Either way, the entire arg input should be tokenized properly.
+print_examples () {
+    printf "Examples:\n"
+	printf "%4s %s\n" "" "<hostgroup>: hostgroup you're targeting"
+}
 
-    hostgroup="$1"; shift;
+# Tokenize all input
 
-    if [[ -z "$hostgroup" ]]; then
-        usage "ERROR: Missing hostgroup"
-        exit 1;
-    fi
-    
-    if [[ "$hostgroup" == "-i" ]]; then
-        # Pass in inventory file
-        shift;
-        inventory_file="$1"
-        shift;
-    fi
+# _next="${_key##-v}"
+# if test -n "$_next" -a "$_next" != "$_key"
+# then
+# 	begins_with_short_option "$_next" && shift && set -- "-v" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
+# fi
+# ;;
 
-
-    if [[ "$#" == 0 ]]; then
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - This contradicts the behavior of the default 'site.yml' playbook
-        # since it can be ran with ./ap hostname 
-        usage "ERROR: Missing playbook";
-        exit 1;
-    fi
-
-    passed_playbook_file_name="$1"; shift;
-
-    if [[ "$passed_playbook_file_name" == "-p" ]]; then
-        # Pass in inventory file
-        shift;
-        playbook_file_set_by_user="$1"
-        shift;
-    fi
-
-    # TODO: Bianca Tamayo (Jul 23, 2017) - arg parsing w/ short & long opts including -i and -p
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-            -b|--base)
-                shift;
-                update_paths "$1"
-                shift;;
-            debug)
-                debug_mode="true"
-                shift;;
-            help)
-                usage
-                exit 0
-                ;;
-            check) ansible_append_flags+=("--syntax-check")
-                shift
-                ;;
-            list-hosts) ansible_append_flags+=("--list-hosts")
-                shift
-                ;;
-            --) shift; break; shift;;
-            *) shift;;
-        esac
-    done
+parse_commandline ()
+{
+	while [[ $# -gt 0 ]] 
+	do
+		_key="$1"
+        echo $_key
+		case "$_key" in
+			-i|--inventory)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_inventory_file="$2"
+				shift
+				;;
+			--inventory=*)
+				_arg_inventory_file="${_key##--inventory=}" # Removes a prefix pattern from _key
+				;;
+			-i*)
+				_arg_inventory_file="${_key##-i}"
+				;;
+			-p|--play)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_playbook_file="$2"
+				shift
+				;;
+			--play=*)
+				_arg_playbook_file="${_key##--play=}"
+				;;
+			-p*)
+				_arg_playbook_file="${_key##-p}" # Matches -p=FILENAME.txt. $_arg_playbook_file -> =FILENAME.txt
+				;;
+			-h|--help)
+				print_help
+				exit 0
+				;;
+			-h*)
+				print_help
+				exit 0
+				;;
+			-v|--version)
+				version
+				exit 0
+				;;
+			-v*)
+				version
+				exit 0
+				;;
+			--debug)
+				usage
+				exit 0
+				;;
+            --' '*) shift; echo "ANSIBLE ARGS:" "$@"; break;;
+			*)
+				_positionals+=("$1")
+				;;
+		esac
+		shift
+	done
+	echo "BREAK-OUT";
 
     remainder_args=$*
-
 }
 
-# ------- MAIN  -------
-echo "DEBUG: [INPUT]" "$@"
 echo ""
-# Begin parse
-parse_args "$@"
+echo "---------"
+echo "[INPUT]:" "$0" "$@"
+echo "---------"
 
+# parse_commandline "$@"
 
-debug "DEBUG: [PWD]" "$PWD"
-debug ""
-debug "DEBUG: Passed hostgroup: $hostgroup"
-debug ""
-debug "DEBUG: Inventory path invoked with -i if any: $inventory_file"
-debug ""
-debug "DEBUG: Playbook path invoked with -p if any: $playbook_file_set_by_user" 
-debug ""
-debug "DEBUG: Passed playbook name or path: $passed_playbook_file_name"
-debug ""
-debug "DEBUG: Base path is: $base_folder"
-debug ""
-debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
-
-
-# Begin logic
-parse_inventory_arg
-
-# Find a playbook directory that has the same name as the service name
-
-# If the playbook is specified and named exactly the same as the playbook in the directory, choose that play
-# e.g. ./playbooks/bianca-blog.yml > ./playbooks/bianca-blog/bianca-blog.yml > ./playbooks/bianca-blog/site.yml
-parse_playbook_arg
-
-# ---------------------
-
-
-# Construct the ansible command @TODO: Bianca Tamayo (Jul 22, 2017) - get rid of extra spaces
-playbook_command="ansible-playbook "
-
-construct_playbook_command() {
-    # Parse the extra ansible commands and make that override everything
-    # Clashes: -l, -i, not -p
-
-    #-i $hostsfile_final_path $playbook_final_path ${ansible_append_flags[*]} ${remainder_args[*]}"
-
-    local inv_param="-i $hostsfile_final_path "
-    local playbook_param="$playbook_final_path "
-    local limit_groups_param="-l $playgroups "
-    local syntax_check_param="--syntax_check "
-    local list_hosts_param="--list-hosts "
-
-    local limit_arg_re="(-l|--limit)+"
-    local check_syntax_re="(--syntax_check)+"
-    local inventory_arg_re="(-i|--inventory-file)+"
-    local list_hosts_re="(--list-hosts)+"
-
-    
-
-    if [[ "${remainder_args[*]}" =~ $inventory_arg_re ]]; then
-        echo "WARN: --inventory-file argument passed by user as extra args"
-        # Skip appending it then
-        playbook_command=$playbook_command$playbook_param
-    else
-        playbook_command=$playbook_command$inv_param$playbook_param
-    fi
-
-    if [[ "${remainder_args[*]}" =~ $limit_arg_re ]]; then # And playgroups is ! -z
-        echo "WARN: --limit argument passed by user as extra args"
-        echo "PLAYGROUPS: $playgroups"
-
-        if [[ -z "$playgroups" ]]; then
-            # noop, just add it at the end
-            echo ""
-        else
-            echo "playgroups: $playgroups" #TODO append
-        fi
-    else
-        playbook_command=$playbook_command$limit_groups_param
-    fi
-
-    if [[ "${remainder_args[*]}" =~ $check_syntax_re || "${ansible_append_flags[*]}" =~ $check_syntax_re ]]; then
-        echo "DEBUG: extra: --syntax_check flag passed by user as extra args"
-
-        # If it's in the ansible-append-flags, then we append it, otherwise let it fall through
-        if [[ "${ansible_append_flags[*]}" =~ $check_syntax_re ]]; then playbook_command=$playbook_command$syntax_check_param; fi
-    fi
-
-    if [[ "${remainder_args[*]}" =~ $list_hosts_re || "${ansible_append_flags[*]}" =~ $list_hosts_re ]]; then
-        echo "DEBUG: extra: --list-hosts flag passed by user as extra args"
-
-        # If it's in the ansible-append-flags, then we append it
-        if [[ "${ansible_append_flags[*]}" =~ $list_hosts_re ]]; then playbook_command=$playbook_command$list_hosts_param; fi
-    fi
-
-    playbook_command=$playbook_command${remainder_args[*]}
-
-    # May have to update this each time cli updates
-}
-
-construct_playbook_command
+# find_max_length "${options_help_keys[@]}"
+print_help_main
 
 echo ""
-echo "[EXEC]: $playbook_command"
-echo ""
-
-debug "DEBUG: Host group and child names: $playgroups"
-debug "DEBUG: Additional options:" "${remainder_args[*]}"
-
-# debug "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
-debug "DEBUG: Parsed groupname in host:" "${grp[@]}"
-debug ""
-# debug "DEBUG: Looking for inventory in: $hostsfile_find_path"
-debug ""
-debug "DEBUG: Playbook file: $passed_playbook_file_name"
-debug ""
-
-# TODO: Bianca Tamayo (Jul 22, 2017) - Add suppress prompt
-if [[ "$debug_mode" == "true" ]]; then exit 0; fi
-
-while true; do
-    read -p "Continue? " yn
-    case $yn in
-        [Yy]* ) $playbook_command; break;;
-        [Nn]* ) exit;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-
-
-# End of file
+# THE DEFAULTS INITIALIZATION - POSITIONALS
+echo "Positionals:" "${_positionals[@]}"
+echo "Leftovers:" "${_arg_leftovers[@]}"
+# THE DEFAULTS INITIALIZATION - OPTIONALS
+echo "Inventory file:" "${_arg_inventory_file[@]}"
+echo "Playbook file:" "${_arg_playbook_file[@]}"
+echo "Additional options:" "${remainder_args[*]}"
+echo "---------"
