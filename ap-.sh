@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Play: https://github.com/btamayo/play
+# Ansibuddy: https://github.com/btamayo/ansibuddy
 # MIT License
 
 # Copyright (c) 2017 Bianca Tamayo
@@ -340,7 +340,7 @@ parse_inventory_arg
 
 # Find a playbook directory that has the same name as the service name
 
-# If the playbook is specified and named exactly the same as the playbook in the directory, choose that play
+# If the playbook is specified and named exactly the same as the playbook in the directory, choose that ansibuddy
 # e.g. ./playbooks/bianca-blog.yml > ./playbooks/bianca-blog/bianca-blog.yml > ./playbooks/bianca-blog/site.yml
 parse_playbook_arg
 

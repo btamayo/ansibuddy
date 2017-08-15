@@ -1,8 +1,8 @@
 
 
-## Play (a.k.a Ansibuddy!): An Ansible-Playbook Wrapper
+## Ansibuddy (a.k.a Ansibuddy!): An Ansible-Playbook Wrapper
 
-[![Build Status](https://travis-ci.org/btamayo/play.svg?branch=master)](https://travis-ci.org/btamayo/play) [![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)](https://github.com/btamayo/play)
+[![Build Status](https://travis-ci.org/btamayo/ansibuddy.svg?branch=master)](https://travis-ci.org/btamayo/ansibuddy) [![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)](https://github.com/btamayo/ansibuddy)
 
 **[WIP] Do not use.**
 
@@ -38,10 +38,10 @@ $ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) 
 
 
 `ansible-playbook-args`: 
-  - Pass other ansible-playbook args. **You must separate between Play arguments and ansible-playbook args using `--`**. 
-  - If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts` through `ansible-playbook-args`, Play will defer to those args instead.
+  - Pass other ansible-playbook args. **You must separate between Ansibuddy arguments and ansible-playbook args using `--`**. 
+  - If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts` through `ansible-playbook-args`, Ansibuddy will defer to those args instead.
 
-For example, running "`bianca-blog.dev.docker site.yml -- -l webservers`" will give you `-l webservers` despite `docker` being provided as the `group name` into Play:
+For example, running "`bianca-blog.dev.docker site.yml -- -l webservers`" will give you `-l webservers` despite `docker` being provided as the `group name` into Ansibuddy:
 
 ```
 ./ap bianca-blog.dev.docker site.yml -- -l webservers
