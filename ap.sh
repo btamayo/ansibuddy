@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Formatting flags
-print_condensed_version="true"
+print_condensed_version=
 print_aligned_right=
 
 # Functions that start with _ have their echos used by other functions.
@@ -112,7 +112,7 @@ _gprintf() {
             # If it's the last string in the array (e.g. --inventory <file>), print the help text that goes 
             # along with it ($2). Otherwise, just print the option (i.e. -i <file>), and a blank in lieu of $2
             if [[ $((index+1)) -eq "${#_arr[@]}" ]]; then
-                printf "$fmt_str_main\n" "" "${_arr[index]}" "" "$2" # Print help string
+                printf "$fmt_str_main" "" "${_arr[index]}" "" "$2" # Print help string
             else
                 printf "$fmt_str_main" "" "${_arr[index]}" "" ""  # Don't print help string
             fi
