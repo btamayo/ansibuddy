@@ -104,29 +104,3 @@ tests:
     playbook: site.yml
     commands: -b example-1
     regex: '[EXEC]: .+(-i hosts)+$'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
