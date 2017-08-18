@@ -49,6 +49,11 @@ def override_key(overrider, overriden):
 
 def generate_tests(suite):
     tests = suite['tests'] # 'tests' key in spec
+    
+    # Update the manual flags from yml -> bats
+    # This is declared top-level in the spec file and can be overriden by any indivudal test
+    if 'partial' in suite:
+        suite['partial'] = '--partial'
 
     for test in tests:
         if 'partial' in test:

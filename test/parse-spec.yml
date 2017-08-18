@@ -11,13 +11,14 @@
 
 hostgroup: bianca-blog.dev.app
 assert_type: assert_line
+partial: true
 script_name: usage.bash
 
 
 tests:
   - description: Parse correctly & limit
     shell: 'bianca-blog.dev site.yml -- -l docker --list-hosts'
-    expected: "DEBUG: Passed hostgroup: bianca-blog.dev.app"
+    expected: "Positionals: site.yml"
 
 
 

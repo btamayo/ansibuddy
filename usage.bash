@@ -345,9 +345,12 @@ echo "---------"
 
 
 # This is for automated testing (uses regex):
-echo "Positionals:" "${_positionals[@]}"
-echo "Inventorfile:" "${_arg_inventory_file[@]}"
-echo "Playbook:" "${_arg_playbook_file[@]}"
-echo "Additional options:" "${remainder_args[*]}"
+oifs=$IFS
+IFS=''
+printf "Positionals: %s | " "${_positionals[@]}"
+printf "Inventory: %s | " "${_arg_inventory_file[@]}"
+printf "Playbook: %s | " "${_arg_playbook_file[@]}"
+printf "Additional options: %s\n" "${remainder_args[*]}"
 echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
 echo "Used -p or --play arg? "$_debug_var_used_pflag
+IFS=$oifs
