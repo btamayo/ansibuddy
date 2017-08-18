@@ -1,8 +1,8 @@
 
 
-## Play (a.k.a Ansibuddy!): An Ansible-Playbook Wrapper
+## Ansibuddy: An Ansible-Playbook Wrapper
 
-[![Build Status](https://travis-ci.org/btamayo/play.svg?branch=master)](https://travis-ci.org/btamayo/play) [![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)](https://github.com/btamayo/play)
+[![Build Status](https://travis-ci.org/btamayo/ansibuddy.svg?branch=master)](https://travis-ci.org/btamayo/ansibuddy) [![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)](https://github.com/btamayo/ansibuddy)
 
 **[WIP] Do not use.**
 
