@@ -23,7 +23,8 @@
 
 hostgroup: bianca-blog.dev.app
 assert_type: assert_line
-script_name: ap.sh
+script_name: usage.bash
+
 
 tests:
   # Parsing

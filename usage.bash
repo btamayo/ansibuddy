@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
 # TODO: Bianca Tamayo (Aug 16, 2017) -- Read generic args & spit out parsed formatted text
-# Formatting flags
-# @TODO: Bianca Tamayo (Aug 16, 2017) - Read as params
-print_condensed_version=
-print_aligned_right=
 
 # Functions that start with _ have their echos used by other functions.
 
@@ -25,17 +21,20 @@ other_keywords_help_keys=("inventory-file" "playbook-file" "ansible-playbook-arg
 
 # Argument defaults: Positional
 _positionals=()
-_arg_leftovers=()
 
 # Argument defaults: Optionals
 _arg_inventory_file=
 _arg_playbook_file=
 
 # Formatting Defaults
-leftpad_length="2"
-col_spacing_length="2"
+leftpad_length="0"
+col_spacing_length=
 fmt_str_main=
 fmt_str_condensed=
+
+# Formatting flags
+print_condensed_version=
+print_aligned_right=
 
 # Start general script
 
@@ -236,6 +235,7 @@ print_examples () {
 # fi
 # ;;
 
+
 print_help_main() {
     build_help
     print_description_info
@@ -247,7 +247,7 @@ print_help_main() {
 }
 
 parse_commandline ()
-{
+{   
     while [[ $# -gt 0 ]] 
     do
         _key="$1"
@@ -324,18 +324,30 @@ echo "---------"
 echo "[INPUT]:" "$0" "$@"
 echo "---------"
 
+
 parse_commandline "$@"
 # print_help_main # For nodemon
 
 # _arg_check, _arg_debug, _arg_list_hosts
 
-# find_max_length "${options_help_keys[@]}"
-
+# This is for human debugging
 echo ""
-echo "Positionals:" "${_positionals[@]}"
-echo "Leftovers:" "${_arg_leftovers[@]}"
-
+echo ""
+echo "--- OUTPUT ---"
+echo ""
+echo "Positionals (only host.group, playbook, commands. Also extra ap flags if past '--'):"
+echo "${_positionals[@]}"
+echo ""
 echo "Inventory file:" "${_arg_inventory_file[@]}"
 echo "Playbook file:" "${_arg_playbook_file[@]}"
 echo "Additional options:" "${remainder_args[*]}"
 echo "---------"
+
+
+# This is for automated testing (uses regex):
+echo "Positionals:" "${_positionals[@]}"
+echo "Inventorfile:" "${_arg_inventory_file[@]}"
+echo "Playbook:" "${_arg_playbook_file[@]}"
+echo "Additional options:" "${remainder_args[*]}"
+echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
+echo "Used -p or --play arg? "$_debug_var_used_pflag

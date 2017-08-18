@@ -7,7 +7,7 @@ import pprint
 import traceback
 import yaml
 
-TEMPLATE_KEYS = ['description', 'hostgroup', 'playbook', 'commands', 'assert_type', 'partial', 'regexflag', 'expected']
+TEMPLATE_KEYS = ['script_name', 'description', 'hostgroup', 'playbook', 'commands', 'assert_type', 'partial', 'regexflag', 'expected']
 
 DOC_HEADER = """#!/usr/bin/env bats
 
@@ -23,7 +23,7 @@ load_lib bats-assert
 """
 
 TEST_TEMPLATE = """@test "{description} [{hostgroup} {playbook} {commands}]" {{
-    run ./ap.sh {hostgroup} {playbook} {commands} debug
+    run ./{script_name} {hostgroup} {playbook} {commands} debug
     {assert_type} {partial} {regexflag} "{expected}"
 }}
 """
