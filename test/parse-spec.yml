@@ -1,11 +1,16 @@
 
 # Data format:
-# echo "Positionals:" "${_positionals[@]}"
-# echo "Inventorfile:" "${_arg_inventory_file[@]}"
-# echo "Playbook:" "${_arg_playbook_file[@]}"
-# echo "Additional options:" "${remainder_args[*]}"
+# {@SEE} ../usage.bash
+
+# oifs=$IFS
+# IFS=''
+# printf "Positionals: %s | " "${_positionals[@]}"
+# printf "Inventory: %s | " "${_arg_inventory_file[@]}"
+# printf "Playbook: %s | " "${_arg_playbook_file[@]}"
+# printf "Additional options: %s\n" "${remainder_args[*]}"
 # echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
 # echo "Used -p or --play arg? "$_debug_var_used_pflag
+# IFS=$oifs
 
 # Python converts undefineds to "None" so for ease just defined it here as "" for now
 

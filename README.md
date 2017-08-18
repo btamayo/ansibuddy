@@ -87,9 +87,9 @@ To test bash scripts, we use [bats](https://github.com/sstephenson/bats), then g
 
 #### Test spec
 
-./bats-test-gen.py (the _bats test generator_) reads a YAML file and generates tests based on a template.
+`./bats-test-gen.py` (the _bats test generator_) reads a YAML file and generates tests based on a template.
 
-The YAML file can is passed in as the only CLI parameter to ./bats-test-gen.py.
+The YAML file can is passed in as the only CLI parameter to `./bats-test-gen.py`.
 
 It must contain the following top level key(s):
 - `script_name`: This is the script that the bats test will invoke with `run`
@@ -97,30 +97,33 @@ It must contain the following top level key(s):
 
 The following keys are optional and can be declared either in the top-level of the spec (where it will act as a default for all the tests), or in the `test` object itself:
 
+**General:**
 - `description`
 
+**Test input params:**
 - `hostgroup`
 - `playbook`
 - `commands`
 - `shell`: Raw shell passed to the scripts. The presence of this key will activate the **Shell (Template 2)** template and is mutually exclusive with (`commands`, `playbook`, and `hostgroup`).
 
+**Asserts and expects:**
 - `assert_type`
 - `partial`: (bool): This is a flag that corresponds to bats's (`--partial`). The generator only checks for the key's existence. `false`y values in YAML get convereted to `None` **strings** (truthy!) in Python at the moment. 
 - `regex`: Overrides `expected` and adds `--regexp` flag to the test.
 
-Example test objects:
+
+**Example test spec objects**:
 ```
-  - description: Parse hostgroup correctly
-    playbook: site.yml
-    commands: ""
-    expected: "DEBUG: Passed hostgroup: bianca-blog.dev.app"
+- description: Parse hostgroup correctly
+  playbook: site.yml
+  commands: ""
+  expected: "DEBUG: Passed hostgroup: bianca-blog.dev.app"
 ```
 
 ```
-tests:
-  - description: Parse correctly & limit
-    shell: 'bianca-blog.dev site.yml -- -l docker --list-hosts'
-    expected: "Positionals: site.yml"
+- description: Parse correctly & limit
+  shell: 'bianca-blog.dev site.yml -- -l docker --list-hosts'
+  expected: "Positionals: site.yml"
 ```
 
 
@@ -133,7 +136,6 @@ This template is in the following format:
     run ./{script_name} {hostgroup} {playbook} {commands} debug
     {assert_type} {partial} {regexflag} "{expected}"
 }}"
-
 ```
 
 **Template 2: Shell** 
