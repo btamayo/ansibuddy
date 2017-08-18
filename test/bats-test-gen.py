@@ -7,7 +7,7 @@ import pprint
 import traceback
 import yaml
 
-TEMPLATE_KEYS = ['script_name', 'description', 'hostgroup', 'playbook', 'commands', 'assert_type', 'partial', 'regexflag', 'expected']
+TEMPLATE_KEYS = ['shell', 'script_name', 'description', 'hostgroup', 'playbook', 'commands', 'assert_type', 'partial', 'regexflag', 'expected']
 
 DOC_HEADER = """#!/usr/bin/env bats
 
@@ -28,6 +28,13 @@ TEST_TEMPLATE = """@test "{description} [{hostgroup} {playbook} {commands}]" {{
 }}
 """
 
+# For script + <raw shell> (i.e. argparsing)
+TEST_TEMPLATE_RAW = """@test "{description} [{shell}]" {{
+    run ./{script_name} {shell}
+    {assert_type} {partial} {regexflag} "{expected}"
+}}
+"""
+
 def override_key(overrider, overriden):
     for key in overrider:
         if key in overriden:
@@ -41,7 +48,7 @@ def override_key(overrider, overriden):
 
 
 def generate_tests(suite):
-    tests = suite['tests']
+    tests = suite['tests'] # 'tests' key in spec
 
     for test in tests:
         if 'partial' in test:
@@ -52,8 +59,10 @@ def generate_tests(suite):
             test['expected'] = test['regex']
 
         test = override_key(test, suite) # Override the rest
+        
+        template = TEST_TEMPLATE_RAW if 'shell' in test else TEST_TEMPLATE
 
-        test = TEST_TEMPLATE.format(**test)
+        test = template.format(**test)
         print test
 
 

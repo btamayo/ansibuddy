@@ -1,23 +1,11 @@
 
-# DEBUG: [INPUT] bianca-blog.dev.app site.yml check list-hosts
-
-# DEBUG: Passed hostgroup: bianca-blog.dev.app
-# DEBUG: Passed playbook name or path: site.yml
-# DEBUG: Passed Commands: --syntax-check --list-hosts
-# INFO: Looking for group: bianca-blog.dev.app
-# INFO: Finding group [app] in ./inventories/bianca-blog/dev/hosts
-# DEBUG: Playbook not found in: ./playbooks/bianca-blog.yml
-# DEBUG: Playbook not found in: ./playbooks/bianca-blog.yaml
-# DEBUG: Playbook not found in: ./playbooks/bianca-blog
-# DEBUG: Playbook not found in: ./playbooks/bianca-blog/bianca-blog
-# DEBUG: Additional options: bianca-blog.dev.app site.yml check list-hosts
-# DEBUG: Parsed env_name, service_name: bianca-blog, dev
-# DEBUG: Parsed groupname in host: app
-# DEBUG: Playbook found in: $playbook_final_path
-# DEBUG: Looking for inventory in: ./inventories/bianca-blog/dev
-# DEBUG: Playbook file:
-
-# DEBUG: [FINAL]: ansible-playbook -i ./inventories/bianca-blog/dev site.yml --syntax-check --list-hosts
+# Data format:
+# echo "Positionals:" "${_positionals[@]}"
+# echo "Inventorfile:" "${_arg_inventory_file[@]}"
+# echo "Playbook:" "${_arg_playbook_file[@]}"
+# echo "Additional options:" "${remainder_args[*]}"
+# echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
+# echo "Used -p or --play arg? "$_debug_var_used_pflag
 
 # Python converts undefineds to "None" so for ease just defined it here as "" for now
 
@@ -27,84 +15,9 @@ script_name: usage.bash
 
 
 tests:
-  # Parsing
-  - description: Parse hostgroup correctly
-    playbook: site.yml
-    commands: ""
+  - description: Parse correctly & limit
+    shell: 'bianca-blog.dev site.yml -- -l docker --list-hosts'
     expected: "DEBUG: Passed hostgroup: bianca-blog.dev.app"
-
-  - description: Parse playbook name or path correctly
-    playbook: "site-a.yml"
-    commands: ""
-    expected: "DEBUG: Passed playbook name or path: site-a.yml"
-
-  - description: Parse playbook name or path correctly with two commands
-    playbook: site.yml
-    commands: check list-hosts
-    expected: "DEBUG: Passed playbook name or path: site-a.yml"
-
-  - description: Parse playbook name or path correctly with two commands
-    playbook: site.yml
-    commands: check list-hosts
-    expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
-
-  - description: Parse & convert one script command correctly
-    playbook: site.yml
-    commands: check
-    expected: "DEBUG: Passed Commands: --syntax-check"
-
-  - description: Parse & convert two script commands correctly
-    playbook: site.yml
-    commands: check list-hosts
-    expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
-
-
-  # Finding
-  - description: Update basepath correctly 
-    playbook: site.yml
-    commands: -b example-1 check list-hosts
-    regex: '^DEBUG: Updated base folder: .*\/example-1[\/]?$'
-
-  # DEBUG: Playbook not found in: ./playbooks/bianca-blog/bianca-blog
-  # DEBUG: Playbook found in: $playbook_final_path
-
-  - description: Find correct playbook
-    hostgroup: bianca-blog.dev.docker
-    playbook: site.yml
-    commands: -b example-1
-    regex: '^DEBUG: Playbook found in: .+(playbooks\/bianca-blog\/site.yml)+$'
-
-  - description: Don't hang if -- is present w/ no input
-    hostgroup: bianca-blog.dev
-    commands: -b example-1 -- 
-    assert_type: refute_line
-    regex: '[EXEC]: (docker)+$'
-
-  - description: Shouldn't be a docker in the exec line if it's overridden by passed in flag
-    hostgroup: bianca-blog.dev.docker
-    commands: -b example-1 -- -l somerandomserver
-    assert_type: refute_line
-    regex: '[EXEC]: (docker)+$'
-  
-  - description: Get passed in override correctly
-    hostgroup: bianca-blog.dev.docker
-    commands: -b example-1 -- -l somerandomserver
-    assert_type: refute_line
-    regex: '[EXEC]: (-l somerandomserver)+$'
-
-  - description: Limit to docker correctly
-    hostgroup: bianca-blog.dev.docker
-    playbook: site.yml
-    commands: -b example-1
-    regex: '[EXEC]: .+(-l docker)+$'
-
-
-  - description: Not passing a hostgroup at all, and just a playbook should run with default -i hosts arg.
-    hostgroup: ""
-    playbook: site.yml
-    commands: -b example-1
-    regex: '[EXEC]: .+(-i hosts)+$'
-
 
 
 

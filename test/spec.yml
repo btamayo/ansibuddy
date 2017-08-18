@@ -1,4 +1,5 @@
 
+# Example data format:
 # DEBUG: [INPUT] bianca-blog.dev.app site.yml check list-hosts
 
 # DEBUG: Passed hostgroup: bianca-blog.dev.app
