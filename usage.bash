@@ -9,7 +9,7 @@
 long_program_desc="Ansibuddy is a CLI tool for ansible-playbook."
 
 # c: check, x: debug, s: show hosts
-stackable_flags="cxs" # These can be stacked as they're flags
+_stackable_flags="cxs" # These can be stacked as they're flags
 
 arg_help_keys=("<hostgroup>" "<playbook>")
 options_help_keys=("-i <file>, --inventory <file>" "-p <file>, --playbook <file>")
@@ -21,6 +21,10 @@ other_keywords_help_keys=("inventory-file" "playbook-file" "ansible-playbook-arg
 
 # Argument defaults: Positional
 _positionals=()
+
+# Positional vars:
+_arg_passed_hostgroup=
+_arg_passed_playbook=
 
 # Argument defaults: Optionals
 _arg_inventory_file=
@@ -246,6 +250,64 @@ print_help_main() {
     printf "\n\n" 
 }
 
+# ---------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
+
+# Logic for arg parsing:
+
+# Step 1: Filtering out known options, breaking at '--'
+
+# While $# > 0:
+# case statements catch all space-delimited tokens from "$@"
+# If it starts with a recognized option, set that argument variable to the value (e.g. -i hosts -> _arg_hosts=hosts)
+#  - ^ This has its own algorithm as well on how to extract the value[1]
+#  - Each option has the following versions: short, long, short=, long=
+#  - Each boolean option / flag has the following versions: long, short, short-stacked
+#  - Short-stacked options have their own algorithm[2]
+# If it's not caught by the 'case' statements yet (options), it falls through to 
+# case '--': shift once, then dump the rest in the remainder args var. This will be passed directly to ansible-playbook
+# case *: This does not match a known option, so we append it to the positionals array
+
+# At the end of this algorithm, we have:
+# Values for named arguments
+# Remainder arguments (past '--')
+# Positional arguments (): This includes any positional arguments that are required, optional subcommands, and unknown options
+
+# Step 2: Parsing the positionals array
+# For ansibuddy, the first two positionals are the hostgroup and the playbook
+# While $# > 0:
+# If it starts with '--', then we know it's an unknown option that was not caught earlier. Throw a fatal error and exit because we can't parse it.
+# Otherwise, allocate positionals[0] to hostgroup, and positional[1] to playbook
+# Try to make sense of the rest. If not possible, throw fatal error and exit.
+
+# Step 3: Finalizing the argument values before handing control back to script logic
+# For mutually exclusive parameters (denoted by (<>|<>)), implement collision logic: override first var? throw error? explicit set precendence? disregard second var?
+# --- Print out warning^?
+
+# Check if required vars are set. If not, throw fatal error and exit.
+# If it is, hand contorl back to script.
+
+# @NOTE @TODO: Bianca Tamayo (Aug 18, 2017) - Can filenames start with `-`? Add "" to accept literals in the future? Add escape chars?
+# @NOTE @TODO: Bianca Tamayo (Aug 18, 2017) - Functionality to `break` for VERSION, HELP, etc. is not yet completed
+# @NOTE @TODO: Bianca Tamayo (Aug 18, 2017) - Functionality for stacked short opts is a WIP
+# ---------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
+
+# Takes array as input
+parse_positionals() {
+    # Don't count min arg length here, that check will be done later. Just assign.
+    [[ ${_positionals[0]} != "-*" ]] && _arg_passed_hostgroup=${_positionals[0]} ||  die "Unknown option: '${_positionals[0]}" 1
+    [[ ${_positionals[1]} != "-*" ]] && _arg_passed_playbook=${_positionals[1]} ||  die "Unknown option: '${_positionals[1]}" 1
+}
+
+# _arg_inventory_file <- Path to file, passed with -i, take as is
+# _arg_playbook_file <- Path to file, passed with -p, take as is 
+# _debug_var_used_iflag, _debug_var_used_pflag <- Convenience booleans for debugging and testing
+# _arg_check, _arg_debug, _arg_list_hosts <- Flags
+# _arg_passed_hostgroup <- Parse this value 
+# _arg_passed_playbook <- Parse this value
+# 
+# Action commands that exit the program immediately: version, help
 parse_commandline ()
 {   
     while [[ $# -gt 0 ]] 
@@ -256,24 +318,31 @@ parse_commandline ()
             -i|--inventory)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
                 _arg_inventory_file="$2"
+                _debug_var_used_iflag="true"
                 shift
                 ;;
             --inventory=*)
                 _arg_inventory_file="${_key##--inventory=}" # Removes a prefix pattern from _key
+                _debug_var_used_iflag="true"
                 ;;
             -i*)
                 _arg_inventory_file="${_key##-i}"
+                _debug_var_used_iflag="true"
                 ;;
+
             -p|--play)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
                 _arg_playbook_file="$2"
+                _debug_var_used_pflag="true"
                 shift
                 ;;
             --play=*)
                 _arg_playbook_file="${_key##--play=}"
+                _debug_var_used_pflag="true"
                 ;;
             -p*)
                 _arg_playbook_file="${_key##-p}" # Matches -p=FILENAME.txt. $_arg_playbook_file -> =FILENAME.txt
+                _debug_var_used_pflag="true"
                 ;;
             
             ## Short options (stackable) bools
@@ -288,6 +357,7 @@ parse_commandline ()
                     begins_with_short_option "$_next" && shift && set -- "-c" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
                 fi
                 ;;
+
             -h|--help)
                 print_help_main
                 exit 0
@@ -296,6 +366,7 @@ parse_commandline ()
                 print_help_main
                 exit 0
                 ;;
+
             -v|--version)
                 version
                 exit 0
@@ -304,11 +375,13 @@ parse_commandline ()
                 version
                 exit 0
                 ;;
+
             --debug)
                 usage
                 exit 0
                 ;;
-            --' '*) shift; break;; # Covers cases like --unknownoption -- -l 
+                
+            --) shift; break;;
             *)
                 _positionals+=("$1")
                 ;;
@@ -328,8 +401,6 @@ echo "---------"
 parse_commandline "$@"
 # print_help_main # For nodemon
 
-# _arg_check, _arg_debug, _arg_list_hosts
-
 # This is for human debugging
 echo ""
 echo ""
@@ -340,7 +411,10 @@ echo "${_positionals[@]}"
 echo ""
 echo "Inventory file:" "${_arg_inventory_file[@]}"
 echo "Playbook file:" "${_arg_playbook_file[@]}"
-echo "Additional options:" "${remainder_args[*]}"
+echo "Remainder args:" "${remainder_args[*]}"
+echo "---------"
+echo "---------"
+echo "---------"
 echo "---------"
 
 
