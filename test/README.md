@@ -30,7 +30,7 @@ It must contain the following top level key(s):
 - `script_name`: This is the script that the bats test will invoke with `run`
 - `tests`: A YAML `list` object of `test`s that describes the each test to be generated
 
-The following keys can be declared either in the top-level of the spec (where it will act as a default for all the tests), or in the `test` object itself which will override the default for that test. Keys must be declared except those marked `*`.
+The following keys can be declared either in the top-level of the spec (where it will act as a default for all the tests), or in the `test` object itself which will override the default for that test. Keys must be declared except flags/booleans.
 
 **Note:** At the moment, generator python script (`bats-test-gen.py`) only checks for the key's existence. `false`y values in YAML get convereted to `"None"` **strings** (truthy!) in Python. 
 
