@@ -56,6 +56,8 @@ def generate_tests(suite):
         suite['partial'] = '--partial'
 
     for test in tests:
+        template = TEST_TEMPLATE_RAW if 'shell' in test else TEST_TEMPLATE
+
         if 'partial' in test:
             test['partial'] = "--partial"
 
@@ -65,7 +67,6 @@ def generate_tests(suite):
 
         test = override_key(test, suite) # Override the rest
         
-        template = TEST_TEMPLATE_RAW if 'shell' in test else TEST_TEMPLATE
 
         test = template.format(**test)
         print test
