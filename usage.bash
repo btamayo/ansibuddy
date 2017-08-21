@@ -293,11 +293,31 @@ print_help_main() {
 # ---------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------
 
+# die:
+# $1 - message (string) - Optional: Message to display to user. Defaults to "Fatal"
+# $2 - exitcode (number/string) - Optional: Exit code. Defaults to 1. Provide empty message string if you don't wish to use a message with an exit code.
+die()
+{
+    local message=${1-"Fatal"}
+    local rc=${2:-1}
+    
+    echo "${BASH_SOURCE[1]}: line ${BASH_LINENO[0]}: ${FUNCNAME[1]}: $message [err code: $rc]" >&2
+    exit "$rc"
+}
+
+begins_with_short_option()
+{
+	local first_option all_short_options
+	all_short_options='ocIvh'
+	first_option="${1:0:1}"
+	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
+}
+
 # Processes the $_positionals array after parse_commandline has been called
 parse_positionals() {
     # Don't count min arg length here, that check will be done later. Just assign.
-    if [[ ${_positionals[0]} != -* ]]; then _arg_positional_inventory=${_positionals[0]}; else echo "Unknown option: '${_positionals[0]}'" && exit 1; fi
-    if [[ ${_positionals[1]} != -* ]]; then _arg_positional_playbook=${_positionals[1]};  else echo "Unknown option: '${_positionals[1]}'" && exit 1; fi
+    if [[ ${_positionals[0]} != -* ]]; then _arg_positional_inventory=${_positionals[0]}; else die "Unknown option: '${_positionals[0]}'" 1; fi
+    if [[ ${_positionals[1]} != -* ]]; then _arg_positional_playbook=${_positionals[1]};  else die "Unknown option: '${_positionals[1]}'" 1; fi
 }
 
 # _arg_inventory_file <- Path to file, passed with -i, take as is
@@ -315,7 +335,7 @@ parse_commandline ()
         _key="$1"
         case "$_key" in
             -i|--inventory)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'" 1
                 _arg_inventory_file="$2"
                 _debug_var_used_iflag="true"
                 shift
@@ -330,7 +350,7 @@ parse_commandline ()
                 ;;
 
             -p|--play)
-                test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'" 1
                 _arg_playbook_file="$2"
                 _debug_var_used_pflag="true"
                 shift
@@ -353,7 +373,7 @@ parse_commandline ()
                 _next="${_key##-c}"
                 if test -n "$_next" -a "$_next" != "$_key"
                 then
-                    begins_with_short_option "$_next" && shift && set -- "-c" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
+                    begins_with_short_option "$_next" && shift && set -- "-c" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option" 1
                 fi
                 ;;
 
