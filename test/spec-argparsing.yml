@@ -5,11 +5,13 @@
 # oifs=$IFS
 # IFS=''
 # printf "Positionals: %s | " "${_positionals[@]}"
-# printf "Inventory: %s | " "${_arg_inventory_file[@]}"
-# printf "Playbook: %s | " "${_arg_playbook_file[@]}"
+# printf "PositionalInventoryHostgroup: %s | " "$_arg_positional_inventory"
+# printf "PositionalPlaybook: %s | " "$_arg_positional_playbook"
+# printf "Inventory file path: %s | " "${_arg_inventory_file[@]}"
+# printf "Playbook file path: %s | " "${_arg_playbook_file[@]}"
 # printf "Additional options: %s\n" "${remainder_args[*]}"
 # echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
-# echo "Used -p or --play arg? "$_debug_var_used_pflag
+# echo "Used -p or --play arg?: "$_debug_var_used_pflag
 # IFS=$oifs
 
 # Python converts undefineds to "None" so for ease just defined it here as "" for now
@@ -20,29 +22,37 @@ partial: true
 script_name: usage.bash
 
 tests:
-  - description: Parse correctly & limit
+  - description: hostgroup and playbook positionals given
     shell: 'bianca-blog.dev site.yml -- -l docker --list-hosts'
-    expected: "PositionalPlaybook: site.yml"
+    expected: 
+      - "PositionalInventoryHostgroup: bianca-blog.dev"
+      - "PositionalPlaybook: site.yml"
+      - "Additional options: -l docker --list-hosts"
 
+  - description: -i flag -p flag given with add'l options
+    shell: '-i hosts -p site.yml -- -l docker --list-hosts'
+    expected: 
+      - "Inventory file path: hosts"
+      - "Playbook file path: site.yml"
+      - "Additional options: -l docker --list-hosts"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  - description: Long + short opts mix
+    shell: --inventory hosts -p site.yml -- -l docker --list-hosts 
+    expected: 
+      - "Inventory file path: hosts"
+      - "Playbook file path: site.yml"
+      - "Additional options: -l docker --list-hosts"
   
+  - description: Long + long opts
+    shell: --inventory hosts --play site.yml -- -l docker --list-hosts 
+    expected: 
+      - "Inventory file path: hosts"
+      - "Playbook file path: site.yml"
+      - "Additional options: -l docker --list-hosts"
+
+  - description: Equals signs
+    shell: --inventory=hosts --play=site.yml -- -l docker --list-hosts 
+    expected: 
+      - "Inventory file path: hosts"
+      - "Playbook file path: site.yml"
+      - "Additional options: -l docker --list-hosts"

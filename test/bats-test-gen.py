@@ -48,6 +48,7 @@ def override_key(overrider, overriden):
 
 
 def generate_tests(suite):
+    count = 0 # Since bats needs a unique desc each test
     tests = suite['tests'] # 'tests' key in spec
     
     # Update the manual flags from yml -> bats
@@ -56,6 +57,7 @@ def generate_tests(suite):
         suite['partial'] = '--partial'
 
     for test in tests:
+        count += 1
         template = TEST_TEMPLATE_RAW if 'shell' in test else TEST_TEMPLATE
 
         if 'partial' in test:
@@ -65,11 +67,33 @@ def generate_tests(suite):
             test['regexflag'] = '--regexp'
             test['expected'] = test['regex']
 
-        test = override_key(test, suite) # Override the rest
-        
+        # @TODO: Bianca Tamayo (Aug 21, 2017) - 
+        # Not sure if bats/bats-assert supports multiple 'expected' statements?
+        # I don't see it in the docs
+        # However, we can make the generator spit out multiple
+        # unit tests if it encounters multiple 'expected' keys
+        # in a single test (in a list)
 
-        test = template.format(**test)
-        print test
+        asserts_list = []
+        if 'expected' in test:
+            # Take the string and assign it to new list
+            if isinstance(test['expected'], basestring):
+                asserts_list.append(test['expected'])
+            else:
+                asserts_list = test['expected']
+
+        # For each 'assert/expect' statement, create a test
+        # Save original description
+        odesc = test['description']
+        subcount = 0
+        for item in asserts_list:
+            subcount += 1
+            desc = '%s %s.%s' % (odesc, str(count), str(subcount))
+            test['expected'] = item
+            test['description'] = desc
+            formatted_test = override_key(test, suite) # Override the rest
+            formatted_test = template.format(**test)
+            print formatted_test
 
 
 def print_testfile(specfile):
