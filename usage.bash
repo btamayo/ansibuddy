@@ -307,9 +307,10 @@ die()
 
 begins_with_short_option()
 {
-	local first_option 
+	local first_option _stackable_flags_all
+    _stackable_flags_all=$_stackable_flags
 	first_option="${1:0:1}"
-	test "$_stackable_flags" = "${_stackable_flags/$first_option/}" && return 1 || return 0
+	test "$_stackable_flags_all" = "${_stackable_flags_all/$first_option/}" && return 1 || return 0
 }
 
 # Processes the $_positionals array after parse_commandline has been called
@@ -365,14 +366,38 @@ parse_commandline ()
             
             ## Short options (stackable) bools
             -c|--check)
-                _arg_flag_check="on"
+                _arg_flag_check="true"
                 ;;
             -c*)
-                _arg_flag_check="on"
+                _arg_flag_check="true"
                 _next="${_key##-c}"
                 if test -n "$_next" -a "$_next" != "$_key"
                 then
                     begins_with_short_option "$_next" && shift && set -- "-c" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option" 1
+                fi
+                ;;
+
+            -x|--debug)
+                _arg_flag_debug="true"
+                ;;
+            -x*)
+                _arg_flag_debug="true"
+                _next="${_key##-x}"
+                if test -n "$_next" -a "$_next" != "$_key"
+                then
+                    begins_with_short_option "$_next" && shift && set -- "-x" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option" 1
+                fi
+                ;;
+
+            -s|--list-hosts)
+                _arg_flag_list_hosts="true"
+                ;;
+            -s*)
+                _arg_flag_list_hosts="true"
+                _next="${_key##-s}"
+                if test -n "$_next" -a "$_next" != "$_key"
+                then
+                    begins_with_short_option "$_next" && shift && set -- "-s" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option" 1
                 fi
                 ;;
 
@@ -450,9 +475,8 @@ printf "PositionalPlaybook: %s | " "$_arg_positional_playbook"
 printf "Inventory file path: %s | " "${_arg_named_inventory_file[@]}"
 printf "Playbook file path: %s | " "${_arg_named_playbook_file[@]}"
 printf "Additional options: %s\n" "${remainder_args[*]}"
-echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
-echo "-s?:" $_debug_var_used_pflag
-echo "-x?: " $_debug_var_used_pflag
-echo "-c?: " $_debug_var_used_pflag
+echo "Flag List hosts:" $_arg_flag_list_hosts
+echo "Flag Debug mode:" $_arg_flag_debug
+echo "Flag Check syntax:" $_arg_flag_check
 
 IFS=$oifs
