@@ -56,3 +56,23 @@ tests:
       - "Inventory file path: hosts"
       - "Playbook file path: site.yml"
       - "Additional options: -l docker --list-hosts"
+
+  - description: Unknown Option
+    shell: --inventory=hosts --play=site.yml --wat -- -l docker --list-hosts 
+    expected: 
+      - "Unknown option: '--wat'"
+  
+  - description: Unknown option after separator
+    shell: --inventory=hosts --play=site.yml -- -l docker --list-hosts --unknown
+    expected: 
+      - "Inventory file path: hosts"
+  
+  - description: Handle dangling separator
+    shell: --inventory=hosts --play=site.yml -- 
+    expected: 
+      - "Inventory file path: hosts"
+  
+  - description: Stacked options
+    shell: --inventory=hosts --play=site.yml -cx
+    expected: 
+      - "Inventory file path: hosts"
