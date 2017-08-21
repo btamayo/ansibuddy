@@ -107,3 +107,13 @@ tests:
       - "Flag List hosts: true"
       - "Flag Debug mode: true"
       - "Flag Check syntax: true"
+  
+  - description: Action version
+    shell: --inventory=hosts --play=site.yml -cx --list-hosts -v
+    expected: 
+      - "Version:"
+
+  - description: Action help
+    shell: --inventory=hosts --play=site.yml -cx --list-hosts -h
+    expected: 
+      - "Usage:"
