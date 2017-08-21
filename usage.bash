@@ -23,8 +23,8 @@ other_keywords_help_keys=("inventory-file" "playbook-file" "ansible-playbook-arg
 _positionals=()
 
 # Positional vars:
-_arg_passed_hostgroup=
-_arg_passed_playbook=
+_arg_positional_inventory=
+_arg_positional_playbook=
 
 # Argument defaults: Optionals
 _arg_inventory_file=
@@ -293,19 +293,19 @@ print_help_main() {
 # ---------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------
 
-# Takes array as input
+# Processes the $_positionals array after parse_commandline has been called
 parse_positionals() {
     # Don't count min arg length here, that check will be done later. Just assign.
-    [[ ${_positionals[0]} != "-*" ]] && _arg_passed_hostgroup=${_positionals[0]} ||  die "Unknown option: '${_positionals[0]}" 1
-    [[ ${_positionals[1]} != "-*" ]] && _arg_passed_playbook=${_positionals[1]} ||  die "Unknown option: '${_positionals[1]}" 1
+    if [[ ${_positionals[0]} != -* ]]; then _arg_positional_inventory=${_positionals[0]}; else echo "Unknown option: '${_positionals[0]}'" && exit 1; fi
+    if [[ ${_positionals[1]} != -* ]]; then _arg_positional_playbook=${_positionals[1]};  else echo "Unknown option: '${_positionals[1]}'" && exit 1; fi
 }
 
 # _arg_inventory_file <- Path to file, passed with -i, take as is
 # _arg_playbook_file <- Path to file, passed with -p, take as is 
 # _debug_var_used_iflag, _debug_var_used_pflag <- Convenience booleans for debugging and testing
 # _arg_check, _arg_debug, _arg_list_hosts <- Flags
-# _arg_passed_hostgroup <- Parse this value 
-# _arg_passed_playbook <- Parse this value
+# _arg_positional_inventory <- Parse this value 
+# _arg_positional_playbook <- Parse this value
 # 
 # Action commands that exit the program immediately: version, help
 parse_commandline ()
@@ -313,7 +313,6 @@ parse_commandline ()
     while [[ $# -gt 0 ]] 
     do
         _key="$1"
-        echo $_key
         case "$_key" in
             -i|--inventory)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
@@ -390,6 +389,9 @@ parse_commandline ()
     done
 
     remainder_args=$*
+
+    # Parse the positionals
+    parse_positionals
 }
 
 echo ""
@@ -409,6 +411,8 @@ echo ""
 echo "Positionals (only host.group, playbook, commands. Also extra ap flags if past '--'):"
 echo "${_positionals[@]}"
 echo ""
+printf "PositionalInventoryHostgroup: %s\n" "$_arg_positional_inventory"
+printf "PositionalPlaybook: %s\n" "$_arg_positional_playbook"
 echo "Inventory file:" "${_arg_inventory_file[@]}"
 echo "Playbook file:" "${_arg_playbook_file[@]}"
 echo "Remainder args:" "${remainder_args[*]}"
@@ -422,9 +426,11 @@ echo "---------"
 oifs=$IFS
 IFS=''
 printf "Positionals: %s | " "${_positionals[@]}"
-printf "Inventory: %s | " "${_arg_inventory_file[@]}"
-printf "Playbook: %s | " "${_arg_playbook_file[@]}"
+printf "PositionalInventoryHostgroup: %s | " "$_arg_positional_inventory"
+printf "PositionalPlaybook: %s | " "$_arg_positional_playbook"
+printf "Inventory file path: %s | " "${_arg_inventory_file[@]}"
+printf "Playbook file path: %s | " "${_arg_playbook_file[@]}"
 printf "Additional options: %s\n" "${remainder_args[*]}"
 echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
-echo "Used -p or --play arg? "$_debug_var_used_pflag
+echo "Used -p or --play arg?: "$_debug_var_used_pflag
 IFS=$oifs
