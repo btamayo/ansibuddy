@@ -27,8 +27,8 @@ _arg_positional_inventory=
 _arg_positional_playbook=
 
 # Argument defaults: Optionals
-_arg_inventory_file=
-_arg_playbook_file=
+_arg_named_inventory_file=
+_arg_named_playbook_file=
 
 # Formatting Defaults
 leftpad_length="0"
@@ -307,10 +307,9 @@ die()
 
 begins_with_short_option()
 {
-	local first_option all_short_options
-	all_short_options='ocIvh'
+	local first_option 
 	first_option="${1:0:1}"
-	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
+	test "$_stackable_flags" = "${_stackable_flags/$first_option/}" && return 1 || return 0
 }
 
 # Processes the $_positionals array after parse_commandline has been called
@@ -320,10 +319,10 @@ parse_positionals() {
     if [[ ${_positionals[1]} != -* ]]; then _arg_positional_playbook=${_positionals[1]};  else die "Unknown option: '${_positionals[1]}'" 1; fi
 }
 
-# _arg_inventory_file <- Path to file, passed with -i, take as is
-# _arg_playbook_file <- Path to file, passed with -p, take as is 
+# _arg_named_inventory_file <- Path to file, passed with -i, take as is
+# _arg_named_playbook_file <- Path to file, passed with -p, take as is 
 # _debug_var_used_iflag, _debug_var_used_pflag <- Convenience booleans for debugging and testing
-# _arg_check, _arg_debug, _arg_list_hosts <- Flags
+# _arg_flag_check, _arg_flag_debug, _arg_flag_list_hosts <- Flags
 # _arg_positional_inventory <- Parse this value 
 # _arg_positional_playbook <- Parse this value
 # 
@@ -336,40 +335,40 @@ parse_commandline ()
         case "$_key" in
             -i|--inventory)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'" 1
-                _arg_inventory_file="$2"
+                _arg_named_inventory_file="$2"
                 _debug_var_used_iflag="true"
                 shift
                 ;;
             --inventory=*)
-                _arg_inventory_file="${_key##--inventory=}" # Removes a prefix pattern from _key
+                _arg_named_inventory_file="${_key##--inventory=}" # Removes a prefix pattern from _key
                 _debug_var_used_iflag="true"
                 ;;
             -i*)
-                _arg_inventory_file="${_key##-i}"
+                _arg_named_inventory_file="${_key##-i}"
                 _debug_var_used_iflag="true"
                 ;;
 
             -p|--play)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'" 1
-                _arg_playbook_file="$2"
+                _arg_named_playbook_file="$2"
                 _debug_var_used_pflag="true"
                 shift
                 ;;
             --play=*)
-                _arg_playbook_file="${_key##--play=}"
+                _arg_named_playbook_file="${_key##--play=}"
                 _debug_var_used_pflag="true"
                 ;;
             -p*)
-                _arg_playbook_file="${_key##-p}" # Matches -p=FILENAME.txt. $_arg_playbook_file -> =FILENAME.txt
+                _arg_named_playbook_file="${_key##-p}" # Matches -p=FILENAME.txt. $_arg_named_playbook_file -> =FILENAME.txt
                 _debug_var_used_pflag="true"
                 ;;
             
             ## Short options (stackable) bools
             -c|--check)
-                _arg_check="on"
+                _arg_flag_check="on"
                 ;;
             -c*)
-                _arg_check="on"
+                _arg_flag_check="on"
                 _next="${_key##-c}"
                 if test -n "$_next" -a "$_next" != "$_key"
                 then
@@ -433,8 +432,8 @@ echo "${_positionals[@]}"
 echo ""
 printf "PositionalInventoryHostgroup: %s\n" "$_arg_positional_inventory"
 printf "PositionalPlaybook: %s\n" "$_arg_positional_playbook"
-echo "Inventory file:" "${_arg_inventory_file[@]}"
-echo "Playbook file:" "${_arg_playbook_file[@]}"
+echo "Inventory file:" "${_arg_named_inventory_file[@]}"
+echo "Playbook file:" "${_arg_named_playbook_file[@]}"
 echo "Remainder args:" "${remainder_args[*]}"
 echo "---------"
 echo "---------"
@@ -448,9 +447,12 @@ IFS=''
 printf "Positionals: %s | " "${_positionals[@]}"
 printf "PositionalInventoryHostgroup: %s | " "$_arg_positional_inventory"
 printf "PositionalPlaybook: %s | " "$_arg_positional_playbook"
-printf "Inventory file path: %s | " "${_arg_inventory_file[@]}"
-printf "Playbook file path: %s | " "${_arg_playbook_file[@]}"
+printf "Inventory file path: %s | " "${_arg_named_inventory_file[@]}"
+printf "Playbook file path: %s | " "${_arg_named_playbook_file[@]}"
 printf "Additional options: %s\n" "${remainder_args[*]}"
 echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
-echo "Used -p or --play arg?: "$_debug_var_used_pflag
+echo "-s?:" $_debug_var_used_pflag
+echo "-x?: " $_debug_var_used_pflag
+echo "-c?: " $_debug_var_used_pflag
+
 IFS=$oifs
