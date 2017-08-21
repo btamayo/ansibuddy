@@ -293,6 +293,12 @@ print_help_main() {
 # ---------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------
 
+# Version fn 
+# TODO: Bianca Tamayo (Aug 21, 2017) - This is only a placeholder, add real fn later
+version() {
+    echo "Version: 0.1.0"
+}
+
 # die:
 # $1 - message (string) - Optional: Message to display to user. Defaults to "Fatal"
 # $2 - exitcode (number/string) - Optional: Exit code. Defaults to 1. Provide empty message string if you don't wish to use a message with an exit code.
@@ -401,6 +407,7 @@ parse_commandline ()
                 fi
                 ;;
 
+            # Actions
             -h|--help)
                 print_help_main
                 exit 0
@@ -419,11 +426,6 @@ parse_commandline ()
                 exit 0
                 ;;
 
-            --debug)
-                usage
-                exit 0
-                ;;
-                
             --) shift; break;;
             *)
                 _positionals+=("$1")
