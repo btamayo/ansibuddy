@@ -29,7 +29,7 @@
 # @TODO: Bianca Tamayo (Aug 16, 2017) - Make sure this still works when you change context
 rootdir="$(dirname "$0")"
 
-"$rootdir/usage.bash"
+. "$rootdir/usage.bash"
 
 # "Constants"
 base_folder=$PWD
@@ -80,23 +80,23 @@ update_paths() {
 usage() {
     echo "$1"
 
-    local help_text="
-    USAGE
-        $0 <HOSTGROUP> <PLAYBOOK> [<COMMAND>...] ...
+    # local help_text="
+    # USAGE
+    #     $0 <HOSTGROUP> <PLAYBOOK> [<COMMAND>...] ...
 
-    DESCRIPTION
-        A wrapper script around ansible-playbook
+    # DESCRIPTION
+    #     A wrapper script around ansible-playbook
 
-    HOSTGROUP
-        The HOSTGROUP is the group in the inventory file to target
+    # HOSTGROUP
+    #     The HOSTGROUP is the group in the inventory file to target
 
-    COMMAND
-        check       Runs syntax-check on determined playbook
-        list-hosts  Lists hosts affected by a playbook
-        help        Print this help
-    "
+    # COMMAND
+    #     check       Runs syntax-check on determined playbook
+    #     list-hosts  Lists hosts affected by a playbook
+    #     help        Print this help
+    # "
 
-    echo "$help_text"
+    # echo "$help_text"
 }
 
 find_inventory_in_paths() {
@@ -323,7 +323,40 @@ parse_args() {
 echo "DEBUG: [INPUT]" "$@"
 echo ""
 # Begin parse
-parse_args "$@"
+parse_commandline "$@"
+
+
+# Variables processed by parse_commandline:
+# Passed positionally:
+# _arg_positional_inventory
+# _arg_positional_playbook
+#
+# Passed with a named argument (e.g. --inventory):
+# _arg_named_inventory_file
+# _arg_named_playbook_file
+#
+# Flags:
+# _arg_flag_list_hosts
+# _arg_flag_debug
+# _arg_flag_check
+#
+# All positionals:
+# _positionals[@] (arr)
+#
+# All remaining args: 
+# remainder_args[@] (arr) -- pass to ansible-playbook directly
+
+echo "Positional inventory:" "$_arg_positional_inventory"
+printf "Positional playbook: %s\n" "$_arg_positional_playbook"
+echo ""
+printf "Inventory file path: %s\n" "${_arg_named_inventory_file[@]}"
+printf "Playbook file path: %s\n" "${_arg_named_playbook_file[@]}"
+echo ""
+echo "Flag List hosts:" ${_arg_flag_list_hosts:-"false"}
+echo "Flag Debug mode:" ${_arg_flag_debug:-"false"}
+echo "Flag Check syntax:" ${_arg_flag_check:-"false"}
+echo ""
+printf "Ansible playbook args: %s\n" "${remainder_args[*]}"
 
 
 debug "DEBUG: [PWD]" "$PWD"

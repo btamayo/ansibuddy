@@ -336,6 +336,8 @@ parse_positionals() {
 # Action commands that exit the program immediately: version, help
 parse_commandline ()
 {   
+    print_debug_input "$@"
+
     while [[ $# -gt 0 ]] 
     do
         _key="$1"
@@ -440,45 +442,45 @@ parse_commandline ()
     parse_positionals
 }
 
-echo ""
-echo "---------"
-echo "[INPUT]:" "$0" "$@"
-echo "---------"
+print_debug_input() {
+    echo ""
+    echo "---------"
+    echo "[INPUT]:" "$0" "$@"
+    echo "---------"
+}
+
+print_debug_output() {
+    # This is for human debugging
+    echo ""
+    echo ""
+    echo "--- OUTPUT ---"
+    echo ""
+    echo "Positionals (only host.group, playbook, commands. Also extra ap flags if past '--'):"
+    echo "${_positionals[@]}"
+    echo ""
+    printf "PositionalInventoryHostgroup: %s\n" "$_arg_positional_inventory"
+    printf "PositionalPlaybook: %s\n" "$_arg_positional_playbook"
+    echo "Inventory file:" "${_arg_named_inventory_file[@]}"
+    echo "Playbook file:" "${_arg_named_playbook_file[@]}"
+    echo "Remainder args:" "${remainder_args[*]}"
+    echo "---------"
+    echo "---------"
+    echo "---------"
+    echo "---------"
 
 
-parse_commandline "$@"
-# print_help_main # For nodemon
+    # This is for automated testing (uses regex):
+    oifs=$IFS
+    IFS=''
+    printf "Positionals: %s | " "${_positionals[@]}"
+    printf "PositionalInventoryHostgroup: %s | " "$_arg_positional_inventory"
+    printf "PositionalPlaybook: %s | " "$_arg_positional_playbook"
+    printf "Inventory file path: %s | " "${_arg_named_inventory_file[@]}"
+    printf "Playbook file path: %s | " "${_arg_named_playbook_file[@]}"
+    printf "Additional options: %s\n" "${remainder_args[*]}"
+    echo "Flag List hosts:" ${_arg_flag_list_hosts:-"false"}
+    echo "Flag Debug mode:" ${_arg_flag_debug:-"false"}
+    echo "Flag Check syntax:" ${_arg_flag_check:-"false"}
 
-# This is for human debugging
-echo ""
-echo ""
-echo "--- OUTPUT ---"
-echo ""
-echo "Positionals (only host.group, playbook, commands. Also extra ap flags if past '--'):"
-echo "${_positionals[@]}"
-echo ""
-printf "PositionalInventoryHostgroup: %s\n" "$_arg_positional_inventory"
-printf "PositionalPlaybook: %s\n" "$_arg_positional_playbook"
-echo "Inventory file:" "${_arg_named_inventory_file[@]}"
-echo "Playbook file:" "${_arg_named_playbook_file[@]}"
-echo "Remainder args:" "${remainder_args[*]}"
-echo "---------"
-echo "---------"
-echo "---------"
-echo "---------"
-
-
-# This is for automated testing (uses regex):
-oifs=$IFS
-IFS=''
-printf "Positionals: %s | " "${_positionals[@]}"
-printf "PositionalInventoryHostgroup: %s | " "$_arg_positional_inventory"
-printf "PositionalPlaybook: %s | " "$_arg_positional_playbook"
-printf "Inventory file path: %s | " "${_arg_named_inventory_file[@]}"
-printf "Playbook file path: %s | " "${_arg_named_playbook_file[@]}"
-printf "Additional options: %s\n" "${remainder_args[*]}"
-echo "Flag List hosts:" ${_arg_flag_list_hosts:-"false"}
-echo "Flag Debug mode:" ${_arg_flag_debug:-"false"}
-echo "Flag Check syntax:" ${_arg_flag_check:-"false"}
-
-IFS=$oifs
+    IFS=$oifs
+}
