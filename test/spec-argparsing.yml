@@ -10,8 +10,9 @@
 # printf "Inventory file path: %s | " "${_arg_inventory_file[@]}"
 # printf "Playbook file path: %s | " "${_arg_playbook_file[@]}"
 # printf "Additional options: %s\n" "${remainder_args[*]}"
-# echo "Used -i or --inventory arg?:" "$_debug_var_used_iflag"
-# echo "Used -p or --play arg?: "$_debug_var_used_pflag
+# echo "Flag List hosts:" $_arg_flag_list_hosts
+# echo "Flag Debug mode:" $_arg_flag_debug
+# echo "Flag Check syntax:" $_arg_flag_check
 # IFS=$oifs
 
 # Python converts undefineds to "None" so for ease just defined it here as "" for now
@@ -70,9 +71,39 @@ tests:
   - description: Handle dangling separator
     shell: --inventory=hosts --play=site.yml -- 
     expected: 
-      - "Inventory file path: hosts"
+      - "Inventory file path: hosts" # means it didn't die
   
   - description: Stacked options
     shell: --inventory=hosts --play=site.yml -cx
     expected: 
-      - "Inventory file path: hosts"
+      - "Flag List hosts: false"
+      - "Flag Debug mode: true"
+      - "Flag Check syntax: true"
+  
+  - description: Stacked options (changed order)
+    shell: --inventory=hosts --play=site.yml -xc
+    expected: 
+      - "Flag List hosts: false"
+      - "Flag Debug mode: true"
+      - "Flag Check syntax: true"
+  
+  - description: Stacked options (mixed, all)
+    shell: --inventory=hosts --play=site.yml -cxs
+    expected: 
+      - "Flag List hosts: true"
+      - "Flag Debug mode: true"
+      - "Flag Check syntax: true"
+
+  - description: Separated and stacked options (mixed, all)
+    shell: --inventory=hosts --play=site.yml -c -xs
+    expected: 
+      - "Flag List hosts: true"
+      - "Flag Debug mode: true"
+      - "Flag Check syntax: true"
+
+  - description: Stacked and long options (mixed, all)
+    shell: --inventory=hosts --play=site.yml -cx --list-hosts
+    expected: 
+      - "Flag List hosts: true"
+      - "Flag Debug mode: true"
+      - "Flag Check syntax: true"

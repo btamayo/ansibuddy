@@ -475,8 +475,8 @@ printf "PositionalPlaybook: %s | " "$_arg_positional_playbook"
 printf "Inventory file path: %s | " "${_arg_named_inventory_file[@]}"
 printf "Playbook file path: %s | " "${_arg_named_playbook_file[@]}"
 printf "Additional options: %s\n" "${remainder_args[*]}"
-echo "Flag List hosts:" $_arg_flag_list_hosts
-echo "Flag Debug mode:" $_arg_flag_debug
-echo "Flag Check syntax:" $_arg_flag_check
+echo "Flag List hosts:" ${_arg_flag_list_hosts:-"false"}
+echo "Flag Debug mode:" ${_arg_flag_debug:-"false"}
+echo "Flag Check syntax:" ${_arg_flag_check:-"false"}
 
 IFS=$oifs
