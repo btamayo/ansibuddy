@@ -25,6 +25,8 @@
 
 # -------------------------------------------------------------------------------
 
+# @TODO: Bianca Tamayo (Aug 21, 2017) - Switch to unix `find` instead of looping?
+
 # Load parseargs 
 # @TODO: Bianca Tamayo (Aug 16, 2017) - Make sure this still works when you change context
 rootdir="$(dirname "$0")"
@@ -51,7 +53,7 @@ remainder_args=()
 
 # Functions
 debug() {
-    if [[ "$debug_mode" == "true" ]]; then printf "%s\n" "$@"; fi
+    if [[ "$_arg_flag_debug" == "true" ]]; then printf "%s\n" "$@"; fi
 }
 
 update_paths() {
@@ -113,13 +115,16 @@ find_inventory_in_paths() {
     hostsfile_final_path="$hostsfile_find_path/hosts"
 }
 
+# _arg_positional_inventory
+# _arg_named_inventory_file
 parse_inventory_arg() {
-    if [[ ! -z "$inventory_file" ]]; then
+    if [[ ! -z "$_arg_named_inventory_file" ]]; then
         # Just go with it and let ansible fail
         hostsfile_final_path="$inventory_file"
     else
+        debug "DEBUG: Determining correct inventory from '$_arg_positional_inventory'"
         # Parse hostgroup name
-        IFS='.' read -ra tokens <<< "$hostgroup"
+        IFS='.' read -ra tokens <<< "$_arg_positional_inventory"
 
         # Try to find a group in the inventory that fits it
         # /inventories/{service}/{environment}/hosts then save the group
@@ -131,11 +136,18 @@ parse_inventory_arg() {
             service_name="${tokens[0]}"
             env_name="${tokens[1]}"
 
+            debug "DEBUG: Found service name: $service_name"
+            debug "DENUG: Found env name: $env_name"
+
             # Remove first two els which are directories (Note that after the first two '.', this converts into parent>child groups. @TODO)
             grp=("${tokens[@]:2}")
 
+            debug "DEBUG: <parent>.<child> hostgroups are:" "${grp[@]}"
+            debug "DEBUG: Length of grp arr: ${#grp[@]}"
+
             hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
 
+            # Search for inventory file
             find_inventory_in_paths
 
             debug "INFO: Limiting to host groups [${grp[*]}]"
@@ -164,7 +176,7 @@ parse_inventory_arg() {
         # bianca-blog.dev&stage.docker&webserver
 
         # @TODO: Bianca Tamayo (Jul 22, 2017) - Create generator functions
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Fallback to ansible find path
+        # @TODO: Bianca Tamayo (Jul 22, 2017) - Fallback to ansible find path: If hosts just cannot be found, don't add -i to the constructed ansible-playbook command so that ansible-playbook will take care of the missing argument
     fi
 }
 
@@ -187,32 +199,127 @@ find_playbook_in_paths() {
     done
 }
 
-# Check if path is absolute
-parse_playbook_arg() {
+# Playbook cases:
+# 1. Passed with -p [_arg_named_playbook_file]
+# 2. Passed without -p [_arg_positional_playbook]
+#    2.1 Absolute path (starts with /)
+#    2.2 Relative path (starts with ./, or has / in the middle of the string)
+#    2.3 Plain name
+#        2.3.1 Ends with '.yml' or '.yaml'
+#        2.3.2 Does not end with YAML extension (Haven't figured out how to handle other exts yet)
+# 3. Not provided at all.
 
-    if [[ ! -z "$playbook_file_set_by_user" ]]; then
-        playbook_final_path="$playbook_final_path"
-    elif [[ "$passed_playbook_file_name" = /* ]]; then
+# Check if path is absolute
+# _arg_named_playbook_file
+# _arg_positional_playbook
+parse_playbook_arg() {
+    # 1
+    if [[ ! -z "$_arg_named_playbook_file" ]]; then
+        debug "DEBUG: 1 Passed using -p, set as final path"
+        debug "DEBUG: setting playbook_final_path to: $_arg_named_playbook_file"
+        playbook_final_path="$_arg_named_playbook_file"
+
+    # 2.1
+    elif [[ "$_arg_positional_playbook" = /* ]]; then
+        debug "DEBUG: 2.1 Passed without -p, absolute path"
         playbook_final_path=$passed_playbook_file_name
     
-    elif [[ "$passed_playbook_file_name" = ./* ]]; then
-        
-        playbook_find_dir=$passed_playbook_file_name
+    # 2.2
+    elif [[ "$_arg_positional_playbook" = ./* || "$_arg_positional_playbook" = */* ]]; then
+        debug "DEBUG: 2.2 Passed without -p, relative path"
+        playbook_find_dir=$_arg_positional_playbook
 
         # Maybe it's a path to an actual playbook
         if [[ -f "$playbook_find_dir" ]]; then
             playbook_final_path=$playbook_find_dir
         fi
     
-    else
+    # 2.3
+    elif [[ ! -z "$_arg_positional_playbook" ]]; then
+        local specific_filename_given
+        debug "DEBUG: 2.3 Passed without -p, not a path, plain name"
+
+        if [[ $_arg_positional_playbook = *.yml || $_arg_positional_playbook = *.yaml ]]; then
+            debug "DEBUG: 2.3.1 Ends with '.yml' or '.yaml'"
+            specific_filename_given=$_arg_positional_playbook
+
+            # If we have a specific filename given, we should honor that
+            # Look for that filename in the service's playbook subdirectory
+            service_playbook_base_path="${playbook_base_dir}/${service_name}"
+            
+            # Find that filename in the service's playbook folder 
+            check_file_paths=( "${service_playbook_base_path}/${specific_filename_given}" )
+
+            # Then try to find it in the main playbook folder
+            check_file_paths+=("${playbook_base_dir}/${specific_filename_given}")
+
+            # Run search
+            find_playbook_in_paths
+
+            # Exit if we can't find it. since they gave us a filename, let's not try to guess what the file itself should be
+            if [[ ! -f "$playbook_final_path" ]]; then
+                usage "FATAL: No playbook found in:  $playbook_final_path"
+                # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
+                exit 1
+            fi
+        else
+            
+            debug "DEBUG: 2.3.2 Does not end with YAML extension"
+
+            # This could be a directory, subdirectory or a filename
+            # 1. Search in service playbk dir -> if exist, use. if not exist, check if subdir. -> if subdir, check for matching service name or site.yml. 
+            # 2. If not in subdir, go back out to main playbook dir and check if it's a playbook there or a subdir there, then do ^
+
+            service_playbook_base_path="${playbook_base_dir}/${service_name}"
+
+            check_file_paths=( "${service_playbook_base_path}/${_arg_positional_playbook}.yml" )
+            check_file_paths+=( "${service_playbook_base_path}/${_arg_positional_playbook}.yaml" )
+
+            local service_playbook_base_path_playbook_subdir # Possibly
+            service_playbook_base_path_playbook_subdir="$service_playbook_base_path/$_arg_positional_playbook"
+                echo "$service_playbook_base_path_playbook_subdir"
+
+            if [[ -d $service_playbook_base_path_playbook_subdir ]]; then
+                # 2. ./playbooks/bianca-blog/deploy/bianca-blog.yml
+                # 3. ./playbooks/bianca-blog/deploy/deploy.yml
+                # 4. ./playbooks/bianca-blog/deploy/site.yml
+
+                check_file_paths+=("$service_playbook_base_path_playbook_subdir/$service_name.yml")
+                check_file_paths+=("$service_playbook_base_path_playbook_subdir/$service_name.yaml")
+
+                check_file_paths+=("$service_playbook_base_path_playbook_subdir/$_arg_positional_playbook.yml")
+                check_file_paths+=("$service_playbook_base_path_playbook_subdir/site.yml")
+            fi
+
+            local playbook_base_dir_playbook_subdir # Possibly
+            playbook_base_dir_playbook_subdir="$playbook_base_dir/$_arg_positional_playbook"
+            if [[ -d $playbook_base_dir_playbook_subdir ]]; then
+                # 5. ./playbooks/deploy/bianca-blog.yml
+                # 6. ./playbooks/deploy/deploy.yml
+                # 7. ./playbooks/deploy/site.yml
+
+                check_file_paths+=("$playbook_base_dir_playbook_subdir/$service_name.yml")
+                check_file_paths+=("$playbook_base_dir_playbook_subdir/$service_name.yaml")
+
+                check_file_paths+=("$playbook_base_dir_playbook_subdir/$_arg_positional_playbook.yml")
+                check_file_paths+=("$playbook_base_dir_playbook_subdir/site.yml")
+            fi
+
+            # Lastly
+            check_file_paths+=("$playbook_base_dir/$_arg_positional_playbook.yml")
+            check_file_paths+=("$playbook_base_dir/$_arg_positional_playbook.yaml")
+
+            find_playbook_in_paths
+        fi
+    elif [[ -z "$_arg_positional_playbook" ]]; then
+        debug "DEBUG: 3. Not provided at all."
+
         # Start looking relative to playbook base dir, then to $pwd
 
         # Unless it's in the ansible ignore cfg
         # ./playbooks/{service_name}.yml > ./playbooks/{service_name}/
         check_file_paths=( "${playbook_base_dir}/${service_name}.yml" )
         check_file_paths+=( "${playbook_base_dir}/${service_name}.yaml" )
-
-        service_playbook_base_path="${playbook_base_dir}/${service_name}"
 
         # Run block
         find_playbook_in_paths
@@ -243,7 +350,7 @@ parse_playbook_arg() {
     # fi
 
     if [[ ! -f "$playbook_final_path" ]]; then
-        usage "FATAL: No playbook ${passed_playbook_file_name} found"
+        usage "FATAL: No playbook found in:  $playbook_final_path"
         # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
         exit 1
     fi
@@ -358,16 +465,6 @@ echo "Flag Check syntax:" ${_arg_flag_check:-"false"}
 echo ""
 printf "Ansible playbook args: %s\n" "${remainder_args[*]}"
 
-
-debug "DEBUG: [PWD]" "$PWD"
-debug ""
-debug "DEBUG: Passed hostgroup: $hostgroup"
-debug ""
-debug "DEBUG: Inventory path invoked with -i if any: $inventory_file"
-debug ""
-debug "DEBUG: Playbook path invoked with -p if any: $playbook_file_set_by_user" 
-debug ""
-debug "DEBUG: Passed playbook name or path: $passed_playbook_file_name"
 debug ""
 debug "DEBUG: Base path is: $base_folder"
 debug ""
@@ -379,7 +476,7 @@ parse_inventory_arg
 
 # Find a playbook directory that has the same name as the service name
 
-# If the playbook is specified and named exactly the same as the playbook in the directory, choose that ansibuddy
+# If the playbook is specified and named exactly the same as the playbook in the directory, choose that play
 # e.g. ./playbooks/bianca-blog.yml > ./playbooks/bianca-blog/bianca-blog.yml > ./playbooks/bianca-blog/site.yml
 parse_playbook_arg
 

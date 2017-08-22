@@ -1,0 +1,12 @@
+[app]
+example.app.com
+example.app.dockerized.com
+
+[db]
+example.db.com
+example.db.dockerized.com
+
+[docker]
+example.dockerservice.com
+example.app.dockerized.com
+example.db.dockerized.com
