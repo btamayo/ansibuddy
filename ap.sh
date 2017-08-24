@@ -186,6 +186,8 @@ find_playbook_in_paths() {
 # _arg_named_playbook_file <- Passed with -p, take it as is
 # _arg_positional_playbook <- Could be a path (rel/abs)
 parse_playbook_arg() {
+    service_playbook_base_path="${playbook_base_dir}/${service_name}"
+
     # 1
     if [[ ! -z "$_arg_named_playbook_file" ]]; then
         debug "DEBUG: 1 Passed using -p, set as final path"
@@ -215,8 +217,7 @@ parse_playbook_arg() {
             specific_filename_given=$_arg_positional_playbook
 
             # If we have a specific filename given, we should honor that
-            # Look for that filename in the service's playbook subdirectory
-            service_playbook_base_path="${playbook_base_dir}/${service_name}"
+            # Look for that filename in the service's playbook subdirectory, $service_playbook_base_path
             
             # Find that filename in the service's playbook folder 
             check_file_paths=( "${service_playbook_base_path}/${specific_filename_given}" )
@@ -240,8 +241,6 @@ parse_playbook_arg() {
             # This could be a directory, subdirectory or a filename
             # 1. Search in service playbk dir -> if exist, use. if not exist, check if subdir. -> if subdir, check for matching service name or site.yml. 
             # 2. If not in subdir, go back out to main playbook dir and check if it's a playbook there or a subdir there, then do ^
-
-            service_playbook_base_path="${playbook_base_dir}/${service_name}"
 
             check_file_paths=( "${service_playbook_base_path}/${_arg_positional_playbook}.yml" )
             check_file_paths+=( "${service_playbook_base_path}/${_arg_positional_playbook}.yaml" )
