@@ -79,28 +79,6 @@ update_paths() {
     playbook_base_dir=$base_folder/$playbook_dir_name
 }
 
-usage() {
-    echo "$1"
-
-    # local help_text="
-    # USAGE
-    #     $0 <HOSTGROUP> <PLAYBOOK> [<COMMAND>...] ...
-
-    # DESCRIPTION
-    #     A wrapper script around ansible-playbook
-
-    # HOSTGROUP
-    #     The HOSTGROUP is the group in the inventory file to target
-
-    # COMMAND
-    #     check       Runs syntax-check on determined playbook
-    #     list-hosts  Lists hosts affected by a playbook
-    #     help        Print this help
-    # "
-
-    # echo "$help_text"
-}
-
 find_inventory_in_paths() {
 
     if [[ ! -d "$hostsfile_find_path" ]]; then
@@ -180,11 +158,7 @@ parse_inventory_arg() {
     fi
 }
 
-# Find playbook
-# If the passed_playbook_file_name looks like a path, 
-# find it in that path first relative to ./playbooks/ then relative to 
-# basedir, unless it's absolute
-
+# Find playbook in array $check_file_paths
 find_playbook_in_paths() {
     local test_path
 
@@ -207,11 +181,10 @@ find_playbook_in_paths() {
 #    2.3 Plain name
 #        2.3.1 Ends with '.yml' or '.yaml'
 #        2.3.2 Does not end with YAML extension (Haven't figured out how to handle other exts yet)
-# 3. Not provided at all.
+# 3. Not playbook provided at all
 
-# Check if path is absolute
-# _arg_named_playbook_file
-# _arg_positional_playbook
+# _arg_named_playbook_file <- Passed with -p, take it as is
+# _arg_positional_playbook <- Could be a path (rel/abs)
 parse_playbook_arg() {
     # 1
     if [[ ! -z "$_arg_named_playbook_file" ]]; then
@@ -256,7 +229,7 @@ parse_playbook_arg() {
 
             # Exit if we can't find it. since they gave us a filename, let's not try to guess what the file itself should be
             if [[ ! -f "$playbook_final_path" ]]; then
-                usage "FATAL: No playbook found in:  $playbook_final_path"
+                die "FATAL: No playbook found in:  $playbook_final_path"
                 # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
                 exit 1
             fi
@@ -348,7 +321,7 @@ parse_playbook_arg() {
     # fi
 
     if [[ ! -f "$playbook_final_path" ]]; then
-        usage "FATAL: No playbook found in:  $playbook_final_path"
+        die "FATAL: No playbook found in:  $playbook_final_path"
         # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
         exit 1
     fi
