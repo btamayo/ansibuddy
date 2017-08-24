@@ -218,22 +218,20 @@ parse_playbook_arg() {
         debug "DEBUG: 1 Passed using -p, set as final path"
         debug "DEBUG: setting playbook_final_path to: $_arg_named_playbook_file"
         playbook_final_path="$_arg_named_playbook_file"
+    # 2.1 + 2.2
+    elif [[ "$_arg_positional_playbook" = */* ]]; then
 
-    # 2.1
-    elif [[ "$_arg_positional_playbook" = /* ]]; then
-        debug "DEBUG: 2.1 Passed without -p, absolute path"
-        playbook_final_path=$passed_playbook_file_name
-    
-    # 2.2
-    elif [[ "$_arg_positional_playbook" = ./* || "$_arg_positional_playbook" = */* ]]; then
-        debug "DEBUG: 2.2 Passed without -p, relative path"
+        if [[ "$_arg_positional_playbook" = /*  ]]; then debug "DEBUG: 2.1 Passed without -p, absolute path"; else debug "DEBUG: 2.2 Passed without -p, relative path"; fi
+       
         playbook_find_dir=$_arg_positional_playbook
 
         # Maybe it's a path to an actual playbook
         if [[ -f "$playbook_find_dir" ]]; then
             playbook_final_path=$playbook_find_dir
         fi
-    
+
+        check_file_paths=( "${playbook_find_dir}" )
+        find_playbook_in_paths
     # 2.3
     elif [[ ! -z "$_arg_positional_playbook" ]]; then
         local specific_filename_given
@@ -312,7 +310,7 @@ parse_playbook_arg() {
             find_playbook_in_paths
         fi
     elif [[ -z "$_arg_positional_playbook" ]]; then
-        debug "DEBUG: 3. Not provided at all."
+        debug "DEBUG: 3. Not playbook provided at all."
 
         # Start looking relative to playbook base dir, then to $pwd
 
