@@ -340,6 +340,25 @@ parse_commandline () {
     do
         _key="$1"
         case "$_key" in
+            # Internal
+            -b|--base)
+                test $# -lt 2 && die "Missing value for the optional argument '$_key'" 1
+                _arg_internal_update_basepath="$2"
+                shift
+                ;;
+            --base=*)
+                _arg_internal_update_basepath="${_key##--base=}" # Removes a prefix pattern from _key
+                ;;
+
+            # Show command only
+            --no-exec)
+                _arg_flag_show_command_only="true"
+                ;;
+            --no-exec=*)
+                _arg_flag_show_command_only="${_key##--no-exec=}" # Removes a prefix pattern from _key
+                ;;
+
+
             -i|--inventory)
                 test $# -lt 2 && die "Missing value for the optional argument '$_key'" 1
                 _arg_named_inventory_file="$2"
@@ -438,15 +457,18 @@ parse_commandline () {
 
     # Parse the positionals
     parse_positionals
+    print_debug_output
 }
 
 print_debug_input() {
+    if [[ $_arg_flag_debug != "true" ]]; then return 0; fi
     echo "---------"
     echo "[INPUT]:" "$0" "$@"
     echo "---------"
 }
 
 print_debug_output() {
+    if [[ $_arg_flag_debug != "true" ]]; then return 0; fi
     # This is for automated testing (uses regex):
     oifs=$IFS
     IFS=''

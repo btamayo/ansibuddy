@@ -370,6 +370,13 @@ debug "DEBUG: Base path is: $base_folder"
 debug ""
 debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
 
+# Internal
+echo $_arg_internal_update_basepath
+if [[ ! -z $_arg_internal_update_basepath ]];
+then
+    update_paths "$_arg_internal_update_basepath"
+fi
+
 
 # Begin logic
 parse_inventory_arg
@@ -464,7 +471,8 @@ debug "DEBUG: Playbook file: $passed_playbook_file_name"
 debug ""
 
 # TODO: Bianca Tamayo (Jul 22, 2017) - Add suppress prompt
-if [[ "$debug_mode" == "true" ]]; then exit 0; fi
+
+if [[ $_arg_flag_no_exec == "true" ]]; then exit 0; fi
 
 while true; do
     read -p "Continue? " yn

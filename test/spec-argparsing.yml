@@ -24,52 +24,52 @@ script_name: usage.bash
 
 tests:
   - description: hostgroup and playbook positionals given
-    shell: 'bianca-blog.dev site.yml -- -l docker --list-hosts'
+    shell: 'bianca-blog.dev site.yml --debug -- -l docker --list-hosts'
     expected: 
       - "PositionalInventoryHostgroup: bianca-blog.dev"
       - "PositionalPlaybook: site.yml"
       - "Additional options: -l docker --list-hosts"
 
   - description: -i flag -p flag given with add'l options
-    shell: '-i hosts -p site.yml -- -l docker --list-hosts'
+    shell: '-i hosts -p site.yml --debug -- -l docker --list-hosts'
     expected: 
       - "Inventory file path: hosts"
       - "Playbook file path: site.yml"
       - "Additional options: -l docker --list-hosts"
 
   - description: Long + short opts mix
-    shell: --inventory hosts -p site.yml -- -l docker --list-hosts 
+    shell: --inventory hosts -p site.yml --debug -- -l docker --list-hosts 
     expected: 
       - "Inventory file path: hosts"
       - "Playbook file path: site.yml"
       - "Additional options: -l docker --list-hosts"
   
   - description: Long + long opts
-    shell: --inventory hosts --play site.yml -- -l docker --list-hosts 
+    shell: --inventory hosts --play site.yml --debug -- -l docker --list-hosts 
     expected: 
       - "Inventory file path: hosts"
       - "Playbook file path: site.yml"
       - "Additional options: -l docker --list-hosts"
 
   - description: Equals signs
-    shell: --inventory=hosts --play=site.yml -- -l docker --list-hosts 
+    shell: --inventory=hosts --play=site.yml --debug -- -l docker --list-hosts 
     expected: 
       - "Inventory file path: hosts"
       - "Playbook file path: site.yml"
       - "Additional options: -l docker --list-hosts"
 
   - description: Unknown Option
-    shell: --inventory=hosts --play=site.yml --wat -- -l docker --list-hosts 
+    shell: --inventory=hosts --play=site.yml --wat --debug -- -l docker --list-hosts 
     expected: 
       - "Unknown option: '--wat'"
   
   - description: Unknown option after separator
-    shell: --inventory=hosts --play=site.yml -- -l docker --list-hosts --unknown
+    shell: --inventory=hosts --play=site.yml --debug -- -l docker --list-hosts --unknown
     expected: 
       - "Inventory file path: hosts"
   
   - description: Handle dangling separator
-    shell: --inventory=hosts --play=site.yml -- 
+    shell: --inventory=hosts --play=site.yml --debug -- 
     expected: 
       - "Inventory file path: hosts" # means it didn't die
   

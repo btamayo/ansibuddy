@@ -12,7 +12,7 @@ path_test_dir_full="$PWD/${test_folder_name}"
 
 
 # Generate tests, ignore generated tests since we don't need that in SCM
-touch  "${path_test_dir_full}/generated_argparse_tests.gitignore.bats"
+touch "${path_test_dir_full}/generated_argparse_tests.gitignore.bats"
 ./"$test_folder_name"/bats-test-gen.py ./"$test_folder_name"/spec-argparsing.yml > "${path_test_dir_full}/generated_argparse_tests.gitignore.bats"
 
 chmod +x "${path_test_dir_full}/generated_argparse_tests.gitignore.bats"

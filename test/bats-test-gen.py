@@ -23,15 +23,15 @@ load_lib bats-assert
 """
 
 TEST_TEMPLATE = """@test "{description} [{hostgroup} {playbook} {commands}]" {{
-    run ./{script_name} {hostgroup} {playbook} {commands} --debug
+    run ./{script_name} {hostgroup} {playbook} {commands} --debug --no-exec
     {assert_type} {partial} {regexflag} "{expected}"
 }}
 """
 
 # For script + <raw shell> (i.e. argparsing)
 TEST_TEMPLATE_RAW = """@test "{description} [{shell}]" {{
-    run ./{script_name} {shell}
-    {assert_type} {partial} {regexflag} "{expected} --debug"
+    run ./{script_name} {shell} --debug --no-exec
+    {assert_type} {partial} {regexflag} "{expected}"
 }}
 """
 
