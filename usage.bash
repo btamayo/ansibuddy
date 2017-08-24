@@ -311,8 +311,7 @@ die()
     exit "$rc"
 }
 
-begins_with_short_option()
-{
+begins_with_short_option() {
 	local first_option _stackable_flags_all
     _stackable_flags_all=$_stackable_flags
 	first_option="${1:0:1}"
@@ -334,8 +333,7 @@ parse_positionals() {
 # _arg_positional_playbook <- Parse this value
 # 
 # Action commands that exit the program immediately: version, help
-parse_commandline ()
-{   
+parse_commandline () {   
     print_debug_input "$@"
 
     while [[ $# -gt 0 ]] 
@@ -443,32 +441,12 @@ parse_commandline ()
 }
 
 print_debug_input() {
-    echo ""
     echo "---------"
     echo "[INPUT]:" "$0" "$@"
     echo "---------"
 }
 
 print_debug_output() {
-    # This is for human debugging
-    echo ""
-    echo ""
-    echo "--- OUTPUT ---"
-    echo ""
-    echo "Positionals (only host.group, playbook, commands. Also extra ap flags if past '--'):"
-    echo "${_positionals[@]}"
-    echo ""
-    printf "PositionalInventoryHostgroup: %s\n" "$_arg_positional_inventory"
-    printf "PositionalPlaybook: %s\n" "$_arg_positional_playbook"
-    echo "Inventory file:" "${_arg_named_inventory_file[@]}"
-    echo "Playbook file:" "${_arg_named_playbook_file[@]}"
-    echo "Remainder args:" "${remainder_args[*]}"
-    echo "---------"
-    echo "---------"
-    echo "---------"
-    echo "---------"
-
-
     # This is for automated testing (uses regex):
     oifs=$IFS
     IFS=''
