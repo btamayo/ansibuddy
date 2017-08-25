@@ -11,6 +11,7 @@ script:
 - "./test/run-argparse-tests.sh"
 branches:
   only:
+  - development
   - master
   - stable
 notifications:

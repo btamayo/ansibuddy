@@ -70,7 +70,7 @@ tests:
     hostgroup: bianca-blog.dev.docker
     playbook: site.yml
     commands: -b example-1
-    regex: '\[EXEC\]: .+(-l docker)+$'
+    regex: '\[EXEC\]: .+(-l docker)+'
 
   - description: Not passing a hostgroup at all should construct the command without it and fall back to ansible-playbook
     shell: -p ./example-1/playbooks/site.yml -b example-1
