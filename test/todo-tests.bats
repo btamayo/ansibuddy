@@ -48,7 +48,7 @@
 # ./ap.sh bianca-blog
 # ./ap.sh bianca-blog.dev
 # ./ap.sh bianca-blog.dev check
-# ./ap.sh bianca-blog.dev playbooks/play.yml
+# ./ap.sh bianca-blog.dev playbooks/ansibuddy.yml
 
 # Multiple "remainder args"
 

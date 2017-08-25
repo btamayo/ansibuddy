@@ -1,6 +1,5 @@
-
-
 ## Ansibuddy: An Ansible-Playbook Wrapper
+
 
 [![Build Status](https://travis-ci.org/btamayo/ansibuddy.svg?branch=master)](https://travis-ci.org/btamayo/ansibuddy) [![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)](https://github.com/btamayo/ansibuddy)
 
@@ -38,10 +37,10 @@ $ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) 
 
 
 `ansible-playbook-args`: 
-  - Pass other ansible-playbook args. **You must separate between Play arguments and ansible-playbook args using `--`**. 
-  - If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts` through `ansible-playbook-args`, Play will defer to those args instead.
+  - Pass other ansible-playbook args. **You must separate between Ansibuddy arguments and ansible-playbook args using `--`**. 
+  - If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts` through `ansible-playbook-args`, Ansibuddy will defer to those args instead.
 
-For example, running "`bianca-blog.dev.docker site.yml -- -l webservers`" will give you `-l webservers` despite `docker` being provided as the `group name` into Play:
+For example, running "`bianca-blog.dev.docker site.yml -- -l webservers`" will give you `-l webservers` despite `docker` being provided as the `group name` into Ansibuddy:
 
 ```
 ./ap bianca-blog.dev.docker site.yml -- -l webservers
@@ -57,9 +56,7 @@ However, using `/ap.sh bianca-blog.dev.docker site.yml` without the `-- -l webse
 [EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l docker
 ```
 
-
-
-## To Do:
+## Possible Future Enhancements
 
 - Integrate with [argbash](https://github.com/matejak/argbash)
 - Subcommands e.g.:
@@ -68,22 +65,10 @@ However, using `/ap.sh bianca-blog.dev.docker site.yml` without the `-- -l webse
     - `deploy`: configures components on the host(s) for the app
 
 
+
 ## Testing
 
-To test bash scripts, we use [bats](https://github.com/sstephenson/bats), then generate tests. This is to speed up both running the tests (as they're not generated every time), and writing them (simple YAML configuration).
-
-### To run the tests:
-- Install [bats](https://github.com/sstephenson/bats) first.
-- Install the submodules if needed:
-    - [bats-assert](https://github.com/ztombol/bats-assert)
-    - [bats-support](https://github.com/ztombol/bats-support)
-
-### Generating tests:
-
-1. Write a spec in `test/spec.yml`.
-2. Run `test/run-tests.sh`.
-
-- `test/run-tests.sh` calls a Python script called `bats-test-gen.py` and relies on stdout and redirection to write to a file in a new, temporary directory called `".tmp-dir"` in the repo root. It copies over necessary files then runs the generated tests within.
+See [test/README.md](test/README.md)
 
 
 ---

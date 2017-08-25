@@ -21,9 +21,10 @@ mkdir ${temp_dir_name}
 
 path_temp_dir_full="$PWD/${temp_dir_name}"
 
+# @TODO: Bianca Tamayo (Aug 18, 2017) - Create src dir for script & dep scripts, expose main script in top-level only.
 cp ${ap_script_name} "${path_temp_dir_full}/"
+cp usage.bash "${path_temp_dir_full}/"
 cp -r ./test/test_helper "${path_temp_dir_full}/"
-
 
 
 # Generate tests
