@@ -20,7 +20,7 @@
 hostgroup: bianca-blog.dev.app
 assert_type: assert_line
 partial: true
-script_name: usage.bash
+script_name: ap.sh
 
 tests:
   - description: hostgroup and playbook positionals given
