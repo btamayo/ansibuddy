@@ -25,8 +25,6 @@
 
 # -------------------------------------------------------------------------------
 
-# @TODO: Bianca Tamayo (Aug 21, 2017) - Switch to unix `find` instead of looping?
-
 # Load parseargs 
 # @TODO: Bianca Tamayo (Aug 16, 2017) - Make sure this still works when you change context
 rootdir="$(dirname "$0")"
@@ -77,6 +75,8 @@ update_paths() {
     # TODO: Bianca Tamayo (Jul 23, 2017) - This can cause double // in prints, etc. affects polish
     inventory_base_dir=$base_folder/$inventory_dir_name
     playbook_base_dir=$base_folder/$playbook_dir_name
+
+    # @NOTE: Anything passed using -p will still be relative to the $PWD. This does not update PWD.
 }
 
 find_inventory_in_paths() {
@@ -320,18 +320,24 @@ parse_playbook_arg() {
     # fi
 
     if [[ ! -f "$playbook_final_path" ]]; then
-        die "FATAL: No playbook found in:  $playbook_final_path"
+        die "FATAL: No playbook found in:  $PWD/$playbook_final_path"
         # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
         exit 1
     fi
 }
 
 # ------- MAIN  -------
-echo "DEBUG: [INPUT]" "$@"
-echo ""
+debug "DEBUG: [INPUT]" "$@"
+
 # Begin parse
 parse_commandline "$@"
 
+# Internal
+echo $_arg_internal_update_basepath
+if [[ ! -z $_arg_internal_update_basepath ]];
+then
+    update_paths "$_arg_internal_update_basepath"
+fi
 
 # Variables processed by parse_commandline:
 # Passed positionally:
@@ -353,29 +359,11 @@ parse_commandline "$@"
 # All remaining args: 
 # remainder_args[@] (arr) -- pass to ansible-playbook directly
 
-echo "Positional inventory:" "$_arg_positional_inventory"
-printf "Positional playbook: %s\n" "$_arg_positional_playbook"
-echo ""
-printf "Inventory file path: %s\n" "${_arg_named_inventory_file[@]}"
-printf "Playbook file path: %s\n" "${_arg_named_playbook_file[@]}"
-echo ""
-echo "Flag List hosts:" ${_arg_flag_list_hosts:-"false"}
-echo "Flag Debug mode:" ${_arg_flag_debug:-"false"}
-echo "Flag Check syntax:" ${_arg_flag_check:-"false"}
-echo ""
-printf "Ansible playbook args: %s\n" "${remainder_args[*]}"
-
 debug ""
 debug "DEBUG: Base path is: $base_folder"
 debug ""
 debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
 
-# Internal
-echo $_arg_internal_update_basepath
-if [[ ! -z $_arg_internal_update_basepath ]];
-then
-    update_paths "$_arg_internal_update_basepath"
-fi
 
 
 # Begin logic
@@ -410,27 +398,21 @@ construct_playbook_command() {
     local inventory_arg_re="(-i|--inventory-file)+"
     local list_hosts_re="(--list-hosts)+"
 
-    
-
     if [[ "${remainder_args[*]}" =~ $inventory_arg_re ]]; then
         echo "WARN: --inventory-file argument passed by user as extra args"
         # Skip appending it then
+        playbook_command=$playbook_command$playbook_param
+    elif [[ -z "$hostsfile_final_path" ]]; then
         playbook_command=$playbook_command$playbook_param
     else
         playbook_command=$playbook_command$inv_param$playbook_param
     fi
 
-    if [[ "${remainder_args[*]}" =~ $limit_arg_re ]]; then # And playgroups is ! -z
+    if [[ "${remainder_args[*]}" =~ $limit_arg_re ]]; then
         echo "WARN: --limit argument passed by user as extra args"
         echo "PLAYGROUPS: $playgroups"
 
-        if [[ -z "$playgroups" ]]; then
-            # noop, just add it at the end
-            echo ""
-        else
-            echo "playgroups: $playgroups" #TODO append
-        fi
-    else
+    elif [[ ! -z "$playgroups" ]]; then
         playbook_command=$playbook_command$limit_groups_param
     fi
 
@@ -458,17 +440,6 @@ construct_playbook_command
 echo ""
 echo "[EXEC]: $playbook_command"
 echo ""
-
-debug "DEBUG: Host group and child names: $playgroups"
-debug "DEBUG: Additional options:" "${remainder_args[*]}"
-
-# debug "DEBUG: Parsed env_name, service_name: $service_name, $env_name"
-debug "DEBUG: Parsed groupname in host:" "${grp[@]}"
-debug ""
-# debug "DEBUG: Looking for inventory in: $hostsfile_find_path"
-debug ""
-debug "DEBUG: Playbook file: $passed_playbook_file_name"
-debug ""
 
 # TODO: Bianca Tamayo (Jul 22, 2017) - Add suppress prompt
 

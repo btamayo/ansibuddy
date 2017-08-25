@@ -35,20 +35,23 @@ TEST_TEMPLATE_RAW = """@test "{description} [{shell}]" {{
 }}
 """
 
-def override_key(overrider, overriden):
-    for key in overrider:
-        if key in overriden:
-            overriden[key] = overrider[key]
-
+def override_key(test, suite):
     for req in TEMPLATE_KEYS:
-        if req not in overrider:
-            overrider[req] = overriden[req] if req in overriden else ""
+        if req not in test:
+            test[req] = suite[req] if req in suite else ''
 
-    return overrider
+    return test
 
 
 def generate_tests(suite):
-    count = 0 # Since bats needs a unique desc each test
+    def format_test(test):
+        desc = '%s %s.%s' % (test['description'], str(count), str(subcount))
+        test['description'] = desc
+        test = override_key(test, suite) # Override the rest
+        # test = dict({k: v for k, v in test.items() if v is not None})
+        return template.format(**test)
+
+    count = 0
     tests = suite['tests'] # 'tests' key in spec
     
     # Update the manual flags from yml -> bats
@@ -81,19 +84,21 @@ def generate_tests(suite):
                 asserts_list.append(test['expected'])
             else:
                 asserts_list = test['expected']
+        else:
+            expected = ''
 
         # For each 'assert/expect' statement, create a test
+        subcount = 0
+
         # Save original description
         odesc = test['description']
-        subcount = 0
-        for item in asserts_list:
-            subcount += 1
-            desc = '%s %s.%s' % (odesc, str(count), str(subcount))
-            test['expected'] = item
-            test['description'] = desc
-            formatted_test = override_key(test, suite) # Override the rest
-            formatted_test = template.format(**test)
-            print formatted_test
+
+        if len(asserts_list) > 0:
+            for item in asserts_list:
+                test['expected'] = item
+                print format_test(test)
+        else:
+                print format_test(test)
 
 
 def print_testfile(specfile):

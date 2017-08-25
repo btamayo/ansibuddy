@@ -319,10 +319,20 @@ begins_with_short_option() {
 }
 
 # Processes the $_positionals array after parse_commandline has been called
+# @TODO: Bianca Tamayo (Aug 24, 2017) - Pass in actual max # as param instead of hardcoding
 parse_positionals() {
-    # Don't count min arg length here, that check will be done later. Just assign.
     if [[ ${_positionals[0]} != -* ]]; then _arg_positional_inventory=${_positionals[0]}; else die "Unknown option: '${_positionals[0]}'" 1; fi
     if [[ ${_positionals[1]} != -* ]]; then _arg_positional_playbook=${_positionals[1]};  else die "Unknown option: '${_positionals[1]}'" 1; fi
+
+    _positionals=("${_positionals[@]:2}")
+
+    local remainders
+    remainders="${_positionals[*]}"
+
+    # Trim whitespace
+    remainders="${remainders#"${remainders%%[![:space:]]*}"}"
+    remainders="${remainders%"${remainders##*[![:space:]]}"}" 
+    if [[ ! -z $remainders ]]; then die "Unknown argument(s) found: $remainders" 1; fi
 }
 
 # _arg_named_inventory_file <- Path to file, passed with -i, take as is
@@ -352,10 +362,10 @@ parse_commandline () {
 
             # Show command only
             --no-exec)
-                _arg_flag_show_command_only="true"
+                _arg_flag_no_exec="true"
                 ;;
             --no-exec=*)
-                _arg_flag_show_command_only="${_key##--no-exec=}" # Removes a prefix pattern from _key
+                _arg_flag_no_exec="${_key##--no-exec=}" # Removes a prefix pattern from _key
                 ;;
 
 

@@ -27,42 +27,16 @@ assert_type: assert_line
 script_name: ap.sh
 
 tests:
-  # Parsing
-  # - description: Parse hostgroup correctly
-  #   playbook: site.yml
-  #   commands: ""
-  #   expected: "DEBUG: Passed hostgroup: bianca-blog.dev.app"
-
-  # - description: Parse playbook name or path correctly
-  #   playbook: "site-a.yml"
-  #   commands: ""
-  #   expected: "DEBUG: Passed playbook name or path: site-a.yml"
-
-  # - description: Parse playbook name or path correctly with two commands
-  #   playbook: site.yml
-  #   commands: check list-hosts
-  #   expected: "DEBUG: Passed playbook name or path: site-a.yml"
-
-  # - description: Parse playbook name or path correctly with two commands
-  #   playbook: site.yml
-  #   commands: check list-hosts
-  #   expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
-
-  # - description: Parse & convert one script command correctly
-  #   playbook: site.yml
-  #   commands: check
-  #   expected: "DEBUG: Passed Commands: --syntax-check"
-
-  # - description: Parse & convert two script commands correctly
-  #   playbook: site.yml
-  #   commands: check list-hosts
-  #   expected: "DEBUG: Passed Commands: --syntax-check --list-hosts"
-
+  # Failures
+  - description: Unknown command check
+    playbook: site.yml
+    commands: -b example-1 check list-hosts
+    assert_type: assert_failure 1
 
   # Finding
   - description: Update basepath correctly 
     playbook: site.yml
-    commands: -b example-1 check list-hosts
+    commands: -b example-1
     regex: '^DEBUG: Updated base folder: .*\/example-1[\/]?$'
 
   # DEBUG: Playbook not found in: ./playbooks/bianca-blog/bianca-blog
@@ -70,37 +44,34 @@ tests:
 
   - description: Find correct playbook
     hostgroup: bianca-blog.dev.docker
-    playbook: site.yml
+    playbook: abc.yml
     commands: -b example-1
-    regex: '^DEBUG: Playbook found in: .+(playbooks\/bianca-blog\/site.yml)+$'
+    regex: '^DEBUG: Playbook found in: .+(playbooks\/bianca-blog\/abc.yml)+$'
 
   - description: Don't hang if -- is present w/ no input
     hostgroup: bianca-blog.dev
     commands: -b example-1 -- 
     assert_type: refute_line
-    regex: '[EXEC]: (docker)+$'
+    regex: '\[EXEC\]: (docker)+$'
 
   - description: Shouldn't be a docker in the exec line if it's overridden by passed in flag
     hostgroup: bianca-blog.dev.docker
     commands: -b example-1 -- -l somerandomserver
     assert_type: refute_line
-    regex: '[EXEC]: (docker)+$'
+    regex: '\[EXEC\]: (docker)+$'
   
   - description: Get passed in override correctly
     hostgroup: bianca-blog.dev.docker
     commands: -b example-1 -- -l somerandomserver
     assert_type: refute_line
-    regex: '[EXEC]: (-l somerandomserver)+$'
+    regex: '\[EXEC\]: (-l somerandomserver)+$'
 
   - description: Limit to docker correctly
     hostgroup: bianca-blog.dev.docker
     playbook: site.yml
     commands: -b example-1
-    regex: '[EXEC]: .+(-l docker)+$'
+    regex: '\[EXEC\]: .+(-l docker)+$'
 
-
-  - description: Not passing a hostgroup at all, and just a playbook should run with default -i hosts arg.
-    hostgroup: ""
-    playbook: site.yml
-    commands: -b example-1
-    regex: '[EXEC]: .+(-i hosts)+$'
+  - description: Not passing a hostgroup at all should construct the command without it and fall back to ansible-playbook
+    shell: -p ./example-1/playbooks/site.yml -b example-1
+    regex: '\[EXEC\]: \s*(ansible-playbook \.\/example-1\/playbooks\/site\.yml)+'
