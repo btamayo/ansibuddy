@@ -5,10 +5,6 @@
 
 **[WIP] Do not use.**
 
-**Background:** I gave up and did this. I was trying to avoid writing a wrapper script, but it seems like it makes things much easier.
-
-Ansible wrapper for my own projects. This requires a specific directory structure.
-
 
 ## Usage
 

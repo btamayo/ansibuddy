@@ -203,8 +203,7 @@ print_commands_help() {
     printf "\n\n"
 }
 
-print_options_help()
-{   
+print_options_help() {   
     printf "\n\n"
     _gprintf "<hostgroup>" "Hostgroup you're targeting"
     _gprintf "<playbook>" "Playbook you're targeting"
@@ -225,7 +224,7 @@ print_options_help()
     printf "\n"
 }
 
-print_examples () {
+print_examples() {
     printf "Examples:\n"
     printf "%4s %s\n" "" "<hostgroup>: hostgroup you're targeting"
 }
@@ -321,10 +320,17 @@ begins_with_short_option() {
 # Processes the $_positionals array after parse_commandline has been called
 # @TODO: Bianca Tamayo (Aug 24, 2017) - Pass in actual max # as param instead of hardcoding
 parse_positionals() {
-    if [[ ${_positionals[0]} != -* ]]; then _arg_positional_inventory=${_positionals[0]}; else die "Unknown option: '${_positionals[0]}'" 1; fi
-    if [[ ${_positionals[1]} != -* ]]; then _arg_positional_playbook=${_positionals[1]};  else die "Unknown option: '${_positionals[1]}'" 1; fi
+    # Assign the first positional, then cut off the first positional from the array if -i hasn't been used
+    if [[ -z $_arg_named_inventory_file ]]; then
+        if [[ ${_positionals[0]} != -* ]]; then _arg_positional_inventory=${_positionals[0]}; else die "Unknown option: '${_positionals[0]}'" 1; fi
+        _positionals=("${_positionals[@]:1}")                
+    fi
 
-    _positionals=("${_positionals[@]:2}")
+    # Assign the first positional (any previous ones would have been removed from the arr), then cut off the first positional from the array if -p hasn't been used
+    if [[ -z $_arg_named_playbook_file ]]; then
+        if [[ ${_positionals[0]} != -* ]]; then _arg_positional_playbook=${_positionals[0]};  else die "Unknown option: '${_positionals[0]}'" 1; fi
+        _positionals=("${_positionals[@]:1}")                
+    fi
 
     local remainders
     remainders="${_positionals[*]}"
@@ -343,7 +349,7 @@ parse_positionals() {
 # _arg_positional_playbook <- Parse this value
 # 
 # Action commands that exit the program immediately: version, help
-parse_commandline () {   
+parse_commandline() {   
     print_debug_input "$@"
 
     while [[ $# -gt 0 ]] 
@@ -408,7 +414,7 @@ parse_commandline () {
                 _next="${_key##-c}"
                 if test -n "$_next" -a "$_next" != "$_key"
                 then
-                    begins_with_short_option "$_next" && shift && set -- "-c" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option" 1
+                    begins_with_short_option "$_next" && shift && set -- "-c" "-${_next}" "$@" || die "Unknown flag: $_key" 1
                 fi
                 ;;
 
@@ -420,7 +426,7 @@ parse_commandline () {
                 _next="${_key##-x}"
                 if test -n "$_next" -a "$_next" != "$_key"
                 then
-                    begins_with_short_option "$_next" && shift && set -- "-x" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option" 1
+                    begins_with_short_option "$_next" && shift && set -- "-x" "-${_next}" "$@" || die "Unknown flag: $_key" 1
                 fi
                 ;;
 
@@ -432,7 +438,7 @@ parse_commandline () {
                 _next="${_key##-s}"
                 if test -n "$_next" -a "$_next" != "$_key"
                 then
-                    begins_with_short_option "$_next" && shift && set -- "-s" "-${_next}" "$@" || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option" 1
+                    begins_with_short_option "$_next" && shift && set -- "-s" "-${_next}" "$@" || die "Unknown flag: $_key" 1
                 fi
                 ;;
 

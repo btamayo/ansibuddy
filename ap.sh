@@ -39,7 +39,7 @@ inventory_base_dir=$base_folder/$inventory_dir_name
 playbook_base_dir=$base_folder/$playbook_dir_name
 
 # Defaults
-# default_playbook_file_name="site.yml"
+default_playbook_file_name="site.yml"
 
 # Script-specific commands like "check", "help", and "list-hosts"
 ansible_append_flags=()
@@ -75,8 +75,6 @@ update_paths() {
     # TODO: Bianca Tamayo (Jul 23, 2017) - This can cause double // in prints, etc. affects polish
     inventory_base_dir=$base_folder/$inventory_dir_name
     playbook_base_dir=$base_folder/$playbook_dir_name
-
-    # @NOTE: Anything passed using -p will still be relative to the $PWD. This does not update PWD.
 }
 
 find_inventory_in_paths() {
@@ -98,8 +96,14 @@ find_inventory_in_paths() {
 parse_inventory_arg() {
     if [[ ! -z "$_arg_named_inventory_file" ]]; then
         # Just go with it and let ansible fail
-        hostsfile_final_path="$inventory_file"
+        hostsfile_final_path="$base_folder/$_arg_named_inventory_file"
     else
+        # If the inventory is positional in first place, warn the user and direct them 
+        if [[ $_arg_positional_inventory =~ (.+\.yml|.+\.yaml) ]] 
+        then
+            echo "WARNING: '$_arg_positional_inventory' looks like a YAML file. Use '-p $_arg_positional_inventory' to omit the hosts parameter when passing in a playbook."
+        fi
+
         debug "DEBUG: Determining correct inventory from '$_arg_positional_inventory'"
         # Parse hostgroup name
         IFS='.' read -ra tokens <<< "$_arg_positional_inventory"
@@ -181,18 +185,20 @@ find_playbook_in_paths() {
 #    2.3 Plain name
 #        2.3.1 Ends with '.yml' or '.yaml'
 #        2.3.2 Does not end with YAML extension (Haven't figured out how to handle other exts yet)
-# 3. Not playbook provided at all
+# 3. No playbook provided at all
 
 # _arg_named_playbook_file <- Passed with -p, take it as is
 # _arg_positional_playbook <- Could be a path (rel/abs)
 parse_playbook_arg() {
+    # This is for polish
+    # @TODO: Bianca Tamayo (Aug 25, 2017) - If there's no service name (e.g. if command is passed in with -i, then there's no need to go into service subdirs)
     service_playbook_base_path="${playbook_base_dir}/${service_name}"
 
     # 1
     if [[ ! -z "$_arg_named_playbook_file" ]]; then
         debug "DEBUG: 1 Passed using -p, set as final path"
-        debug "DEBUG: setting playbook_final_path to: $_arg_named_playbook_file"
-        playbook_final_path="$_arg_named_playbook_file"
+        debug "DEBUG: setting playbook_final_path to: $base_folder/$_arg_named_playbook_file"
+        playbook_final_path="$base_folder/$_arg_named_playbook_file"
     # 2.1 + 2.2
     elif [[ "$_arg_positional_playbook" = */* ]]; then
 
@@ -227,13 +233,6 @@ parse_playbook_arg() {
 
             # Run search
             find_playbook_in_paths
-
-            # Exit if we can't find it. since they gave us a filename, let's not try to guess what the file itself should be
-            if [[ ! -f "$playbook_final_path" ]]; then
-                die "FATAL: No playbook found in:  $playbook_final_path"
-                # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
-                exit 1
-            fi
         else
             
             debug "DEBUG: 2.3.2 Does not end with YAML extension"
@@ -283,41 +282,46 @@ parse_playbook_arg() {
         fi
     elif [[ -z "$_arg_positional_playbook" ]]; then
         debug "DEBUG: 3. Not playbook provided at all."
+        
+        if [[ ! -z "$_arg_positional_inventory_file" ]] 
+        then
+                
+            # Start looking relative to playbook base dir, then to $pwd
 
-        # Start looking relative to playbook base dir, then to $pwd
+            # Unless it's in the ansible ignore cfg
+            # ./playbooks/{service_name}.yml > ./playbooks/{service_name}/
+            check_file_paths=( "${playbook_base_dir}/${service_name}.yml" )
+            check_file_paths+=( "${playbook_base_dir}/${service_name}.yaml" )
 
-        # Unless it's in the ansible ignore cfg
-        # ./playbooks/{service_name}.yml > ./playbooks/{service_name}/
-        check_file_paths=( "${playbook_base_dir}/${service_name}.yml" )
-        check_file_paths+=( "${playbook_base_dir}/${service_name}.yaml" )
-
-        # Run block
-        find_playbook_in_paths
-
-        # If it found it, good, if not, update the search paths
-        if [[ ! -f "$playbook_final_path" && -d "$service_playbook_base_path" ]]; then
-            check_file_paths=("${service_playbook_base_path}/${service_name}.yml")
-            check_file_paths+=("${service_playbook_base_path}/site.yml")
-
-            # Run block again
+            # Run block
             find_playbook_in_paths
-        fi
 
-        # If it's still not found
-        # Check existence of extensionless playbook files
-        if [[ ! -f "$playbook_final_path" ]]; then
-            check_file_paths=( "${playbook_base_dir}/${service_name}" )
-            check_file_paths+=("${service_playbook_base_path}/${service_name}")
+            # If it found it, good, if not, update the search paths
+            if [[ ! -f "$playbook_final_path" && -d "$service_playbook_base_path" ]]; then
+                check_file_paths=("${service_playbook_base_path}/${service_name}.yml")
+                check_file_paths+=("${service_playbook_base_path}/site.yml")
 
-            # Run block again
-            find_playbook_in_paths
+                # Run block again
+                find_playbook_in_paths
+            fi
+
+            # If it's still not found
+            # Check existence of extensionless playbook files
+            if [[ ! -f "$playbook_final_path" ]]; then
+                check_file_paths=( "${playbook_base_dir}/${service_name}" )
+                check_file_paths+=("${service_playbook_base_path}/${service_name}")
+
+                # Run block again
+                find_playbook_in_paths
+            fi
+        
         fi
     fi
 
     # If it still can't find it, assign the final to the default and don't even bother checking if it's a file
-    # if [[ ! -f "$playbook_final_path" ]]; then
-    #     playbook_final_path="$default_playbook_file_name"
-    # fi
+    if [[ ! -f "$playbook_final_path" ]]; then
+        playbook_final_path="$default_playbook_file_name"
+    fi
 
     if [[ ! -f "$playbook_final_path" ]]; then
         die "FATAL: No playbook found in:  $PWD/$playbook_final_path"
@@ -333,7 +337,6 @@ debug "DEBUG: [INPUT]" "$@"
 parse_commandline "$@"
 
 # Internal
-echo $_arg_internal_update_basepath
 if [[ ! -z $_arg_internal_update_basepath ]];
 then
     update_paths "$_arg_internal_update_basepath"
@@ -446,7 +449,7 @@ echo ""
 if [[ $_arg_flag_no_exec == "true" ]]; then exit 0; fi
 
 while true; do
-    read -p "Continue? " yn
+    read -rp "Continue? " yn
     case $yn in
         [Yy]* ) $playbook_command; break;;
         [Nn]* ) exit;;
