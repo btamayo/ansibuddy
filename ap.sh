@@ -324,7 +324,7 @@ parse_playbook_arg() {
     fi
 
     if [[ ! -f "$playbook_final_path" ]]; then
-        die "FATAL: No playbook found in:  $PWD/$playbook_final_path"
+        die "FATAL: No playbook found in: $playbook_final_path"
         # TODO: Bianca Tamayo (Jul 22, 2017) - Add skipping check existence
         exit 1
     fi
