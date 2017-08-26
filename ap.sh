@@ -33,10 +33,13 @@ rootdir="$(dirname "$0")"
 
 # "Constants"
 base_folder=$PWD
+base_dir=$PWD
 inventory_dir_name="inventories"
 playbook_dir_name="playbooks"
 inventory_base_dir=$base_folder/$inventory_dir_name
 playbook_base_dir=$base_folder/$playbook_dir_name
+inventory_base_dir=$base_dir/$inventory_dir_name
+playbook_base_dir=$base_dir/$playbook_dir_name
 
 # Defaults
 default_playbook_file_name="site.yml"
@@ -60,21 +63,28 @@ update_paths() {
     # See if it's an absolute path
     if [[ "$passed_base_dir" = /* ]]; then
         base_folder=$passed_base_dir
+        base_dir=$passed_base_dir
     else
         # Relative to PWD
         base_folder=$base_folder/$passed_base_dir
+        base_dir=$base_dir/$passed_base_dir
     fi
 
     # Warn
     if [[ ! -d "$base_folder" ]]; then
         echo "WARN: $base_folder non-existent path or file"
+    if [[ ! -d "$base_dir" ]]; then
+        echo "WARN: $base_dir non-existent path or file"
     fi
 
     echo "DEBUG: Updated base folder: $base_folder"
+    echo "DEBUG: Updated base folder: $base_dir"
 
     # TODO: Bianca Tamayo (Jul 23, 2017) - This can cause double // in prints, etc. affects polish
     inventory_base_dir=$base_folder/$inventory_dir_name
     playbook_base_dir=$base_folder/$playbook_dir_name
+    inventory_base_dir=$base_dir/$inventory_dir_name
+    playbook_base_dir=$base_dir/$playbook_dir_name
 }
 
 find_inventory_in_paths() {
@@ -97,6 +107,7 @@ parse_inventory_arg() {
     if [[ ! -z "$_arg_named_inventory_file" ]]; then
         # Just go with it and let ansible fail
         hostsfile_final_path="$base_folder/$_arg_named_inventory_file"
+        hostsfile_final_path="$base_dir/$_arg_named_inventory_file"
     else
         # If the inventory is positional in first place, warn the user and direct them 
         if [[ $_arg_positional_inventory =~ (.+\.yml|.+\.yaml) ]] 
@@ -199,6 +210,8 @@ parse_playbook_arg() {
         debug "DEBUG: 1 Passed using -p, set as final path"
         debug "DEBUG: setting playbook_final_path to: $base_folder/$_arg_named_playbook_file"
         playbook_final_path="$base_folder/$_arg_named_playbook_file"
+        debug "DEBUG: setting playbook_final_path to: $base_dir/$_arg_named_playbook_file"
+        playbook_final_path="$base_dir/$_arg_named_playbook_file"
     # 2.1 + 2.2
     elif [[ "$_arg_positional_playbook" = */* ]]; then
 
@@ -230,6 +243,9 @@ parse_playbook_arg() {
 
             # Then try to find it in the main playbook folder
             check_file_paths+=("${playbook_base_dir}/${specific_filename_given}")
+
+            # If it really can't find it, then base dir
+            check_file_paths+=("$base_dir/$specific_filename_given")
 
             # Run search
             find_playbook_in_paths
@@ -275,15 +291,22 @@ parse_playbook_arg() {
             fi
 
             # Lastly
+            # Playbook directory
             check_file_paths+=("$playbook_base_dir/$_arg_positional_playbook.yml")
             check_file_paths+=("$playbook_base_dir/$_arg_positional_playbook.yaml")
+
+            # If it really can't find it, then base dir
+            check_file_paths+=("$base_dir/$_arg_positional_playbook.yml")
+            check_file_paths+=("$base_dir/$_arg_positional_playbook.yaml")
 
             find_playbook_in_paths
         fi
     elif [[ -z "$_arg_positional_playbook" ]]; then
         debug "DEBUG: 3. Not playbook provided at all."
+        debug "DEBUG: 3. No playbook provided at all."
         
         if [[ ! -z "$_arg_positional_inventory_file" ]] 
+        if [[ ! -z "$_arg_positional_inventory" ]] 
         then
                 
             # Start looking relative to playbook base dir, then to $pwd
@@ -321,6 +344,10 @@ parse_playbook_arg() {
     # If it still can't find it, assign the final to the default and don't even bother checking if it's a file
     if [[ ! -f "$playbook_final_path" ]]; then
         playbook_final_path="$default_playbook_file_name"
+        # If it still can't find it, assign the final to the default and don't even bother checking if it's a file
+        if [[ ! -f "$playbook_final_path" ]]; then
+            playbook_final_path="$default_playbook_file_name"
+        fi
     fi
 
     if [[ ! -f "$playbook_final_path" ]]; then
@@ -364,6 +391,7 @@ fi
 
 debug ""
 debug "DEBUG: Base path is: $base_folder"
+debug "DEBUG: Base path is: $base_dir"
 debug ""
 debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
 
@@ -434,6 +462,9 @@ construct_playbook_command() {
     fi
 
     playbook_command=$playbook_command${remainder_args[*]}
+
+    debug "[EXEC]: $playbook_command"
+    playbook_command=${playbook_command//$base_dir/\.} # Truncate for easier viewing 
 
     # May have to update this each time cli updates
 }
