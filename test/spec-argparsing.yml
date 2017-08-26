@@ -61,7 +61,7 @@ tests:
   - description: Unknown Option
     shell: --inventory=hosts --play=site.yml --wat --debug -- -l docker --list-hosts 
     expected: 
-      - "Unknown option: '--wat'"
+      - "Unknown argument(s) found: '--wat'"
   
   - description: Unknown option after separator
     shell: --inventory=hosts --play=site.yml --debug -- -l docker --list-hosts --unknown

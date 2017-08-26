@@ -338,7 +338,7 @@ parse_positionals() {
     # Trim whitespace
     remainders="${remainders#"${remainders%%[![:space:]]*}"}"
     remainders="${remainders%"${remainders##*[![:space:]]}"}" 
-    if [[ ! -z $remainders ]]; then die "Unknown argument(s) found: $remainders" 1; fi
+    if [[ ! -z $remainders ]]; then die "Unknown argument(s) found: '$remainders'" 1; fi
 }
 
 # _arg_named_inventory_file <- Path to file, passed with -i, take as is
