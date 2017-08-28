@@ -32,12 +32,9 @@ rootdir="$(dirname "$0")"
 . "$rootdir/usage.bash"
 
 # "Constants"
-base_folder=$PWD
 base_dir=$PWD
 inventory_dir_name="inventories"
 playbook_dir_name="playbooks"
-inventory_base_dir=$base_folder/$inventory_dir_name
-playbook_base_dir=$base_folder/$playbook_dir_name
 inventory_base_dir=$base_dir/$inventory_dir_name
 playbook_base_dir=$base_dir/$playbook_dir_name
 
@@ -62,43 +59,37 @@ update_paths() {
 
     # See if it's an absolute path
     if [[ "$passed_base_dir" = /* ]]; then
-        base_folder=$passed_base_dir
         base_dir=$passed_base_dir
     else
         # Relative to PWD
-        base_folder=$base_folder/$passed_base_dir
         base_dir=$base_dir/$passed_base_dir
     fi
 
     # Warn
-    if [[ ! -d "$base_folder" ]]; then
-        echo "WARN: $base_folder non-existent path or file"
     if [[ ! -d "$base_dir" ]]; then
         echo "WARN: $base_dir non-existent path or file"
     fi
 
-    echo "DEBUG: Updated base folder: $base_folder"
     echo "DEBUG: Updated base folder: $base_dir"
 
     # TODO: Bianca Tamayo (Jul 23, 2017) - This can cause double // in prints, etc. affects polish
-    inventory_base_dir=$base_folder/$inventory_dir_name
-    playbook_base_dir=$base_folder/$playbook_dir_name
     inventory_base_dir=$base_dir/$inventory_dir_name
     playbook_base_dir=$base_dir/$playbook_dir_name
 }
 
 find_inventory_in_paths() {
+    # Find playbook in array $check_file_paths
+    local test_path
 
-    if [[ ! -d "$hostsfile_find_path" ]]; then
-        debug "DEBUG: $hostsfile_find_path does not exist"
-    elif [[ -d "$hostsfile_find_path" && ! -f "$hostsfile_find_path/hosts" ]]; then
-        debug "DEBUG: hosts file in $hostsfile_find_path does not exist"
-    elif [[ -f "$hostsfile_find_path/hosts" ]]; then
-        debug "DEBUG: Found hosts file in $hostsfile_find_path/hosts"
-    fi
-
-    # If it does exist, we're still gonna assign it and let ansible fail. ^ is for debugging only.
-    hostsfile_final_path="$hostsfile_find_path/hosts"
+    for test_path in "${find_inventory_paths[@]}"; do
+        if [[ -f "$test_path" ]]; then
+            hostsfile_final_path="$test_path"
+            debug "DEBUG: Inventory file found in: $hostsfile_final_path"
+            break;
+        else
+            debug "DEBUG: Inventory file not found in: $test_path"
+        fi
+    done
 }
 
 # _arg_positional_inventory
@@ -106,7 +97,6 @@ find_inventory_in_paths() {
 parse_inventory_arg() {
     if [[ ! -z "$_arg_named_inventory_file" ]]; then
         # Just go with it and let ansible fail
-        hostsfile_final_path="$base_folder/$_arg_named_inventory_file"
         hostsfile_final_path="$base_dir/$_arg_named_inventory_file"
     else
         # If the inventory is positional in first place, warn the user and direct them 
@@ -120,56 +110,84 @@ parse_inventory_arg() {
         IFS='.' read -ra tokens <<< "$_arg_positional_inventory"
 
         # Try to find a group in the inventory that fits it
-        # /inventories/{service}/{environment}/hosts then save the group
-        # e.g. bianca-blog.dev.docker
 
-        # Needs to be at least two, since we don't just deploy to "bianca-blog"
-        if [[ "${#tokens[@]}" -gt 1 ]]; then
-            # Parse by <service>.<env>
-            service_name="${tokens[0]}"
-            env_name="${tokens[1]}"
+        # {base_inventory_find_dir}/{service}/{env}/hosts
+        # First check if it even has an inventory directory
+
+        # {base_inventory_find_dir} can be $base_inventory_dir/$service_name/, $base_inventory_dir/, or $base_dir/$service_name/, or $base_dir (in order)
+        service_name="${tokens[0]}"
+        base_inventory_find_dir=$base_inventory_dir
+        
+        grp=("${tokens[@]:1}") # Chop off the groupchilds (minus the service_name)
+
+        env_name="${tokens[1]}"
+
+        find_inventory_paths=()
+
+        # If $service_name is a dir, there might be /hosts
+        find_inventory_paths+=( "$base_inventory_find_dir/$service_name/hosts" )
+        find_inventory_in_paths
+
+        # First check if we even have an ./inventories/ folder
+        if [[ -d "$inventory_base_dir" ]]; then
+            # If it is a directory, check if ./inventories/service name is a directory
+            if [[ -d "$inventory_base_dir/$service_name" ]]; then
+
+                # ./inventories/service/hosts
+                if [[ -f "$inventory_base_dir/$service_name/hosts" ]]; then
+                    hostsfile_final_path="$inventory_base_dir/$service_name/hosts"
+
+                elif [[ -f "$inventory_base_dir/$service_name/$env_name" && ! -z $env_name ]]; then
+                    # If ./inventories/service_name/dev is a file, chop `dev` off the childgroups
+                    hostsfile_final_path="$inventory_base_dir/$service_name/$env_name"
+                    grp=("${grp[@]:1}")
+                fi
+
+            elif [[ -f "$inventory_base_dir/$service_name" ]]; then 
+                # If ./inventories/servicename isn't a dir, it might be the file
+                hostsfile_final_path="$inventory_base_dir/$service_name"
+            fi
+        else
+            # If it's not a directory, check if ./base_dir/service is a directory AND service len is not zero (since base_dir is certainly a dir)
+            if [[ -d $base_dir/${service_name} && ! -z ${service_name} ]]; then
+                debug "DEBUG: No directory 'inventories' found"
+                # Should people put hosts file in ./bianca-blog/hosts
+                # - yes, but only if it's called 'hosts', or it's in an inventory dir
+                if [[ -f $base_dir/${service_name}/inventories/hosts ]]; then
+                    hostsfile_final_path="$base_dir/${service_name}/inventories/hosts"
+
+                # ./blog/inventories/dev
+                elif [[ -f $base_dir/${service_name}/inventories/$env_name && ! -z $env_name ]]; then
+                    hostsfile_final_path="$base_dir/${service_name}/inventories/$env_name"
+                    grp=("${grp[@]:1}")
+                    
+                elif [[ -f $base_dir/${service_name}/hosts ]]; then
+                    hostsfile_final_path="$base_dir/${service_name}/hosts"
+
+                elif [[ -f $base_dir/${service_name}/$env_name && ! -z $env_name ]]; then
+                    hostsfile_final_path="$base_dir/${service_name}/$env_name/hosts"
+                    grp=("${grp[@]:1}")
+                fi
+            
+            # Else, if ./$service_name isn't a directory, then check for $service_name in the base directory as a file, if not, find 'hosts', and add $service_name to grp
+            else
+                debug "DEBUG: $base_dir/$service_name is not a directory"
+                if [[ -f $base_dir/$service_name ]]; then
+                    debug "DEBUG: Found inventory file in $base_dir/$service_name"
+                    hostsfile_final_path="$base_dir/$service_name"
+                
+                elif [[ -f $base_dir/hosts ]]; then
+                    grp=("${tokens[@]}") # All the tokens since none of them are consumed in this
+                fi
+            fi
 
             debug "DEBUG: Found service name: $service_name"
             debug "DENUG: Found env name: $env_name"
-
-            # Remove first two els which are directories (Note that after the first two '.', this converts into parent>child groups. @TODO)
-            grp=("${tokens[@]:2}")
-
+    
             debug "DEBUG: <parent>.<child> hostgroups are:" "${grp[@]}"
             debug "DEBUG: Length of grp arr: ${#grp[@]}"
-
-            hostsfile_find_path="$inventory_base_dir/$service_name/$env_name"
-
-            # Search for inventory file
-            find_inventory_in_paths
-
             debug "INFO: Limiting to host groups [${grp[*]}]"
-
-            # For the rest, make them into groups
-            # playgroups=$(printf ":&%s" "${grp[@]]}")
-            playgroups=${grp}
-
-
-        elif [[ "${#tokens[@]}" -eq 1 ]]; then
-            # Just the service name or the env name for single projects
-
-            # e.g. bianca-blog/hosts
-            # e.g. dev/hosts
-
-            # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle custom inv files?
-
-            dir_name="${tokens[0]}"
-            hostsfile_find_path="$inventory_base_dir/$dir_name"
-
-            find_inventory_in_paths
         fi
-
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Handle cases like this: bianca-blog.dev.docker.webserver
-        # bianca-blog.dev.docker&webserver
-        # bianca-blog.dev&stage.docker&webserver
-
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Create generator functions
-        # @TODO: Bianca Tamayo (Jul 22, 2017) - Fallback to ansible find path: If hosts just cannot be found, don't add -i to the constructed ansible-playbook command so that ansible-playbook will take care of the missing argument
     fi
 }
 
@@ -208,8 +226,6 @@ parse_playbook_arg() {
     # 1
     if [[ ! -z "$_arg_named_playbook_file" ]]; then
         debug "DEBUG: 1 Passed using -p, set as final path"
-        debug "DEBUG: setting playbook_final_path to: $base_folder/$_arg_named_playbook_file"
-        playbook_final_path="$base_folder/$_arg_named_playbook_file"
         debug "DEBUG: setting playbook_final_path to: $base_dir/$_arg_named_playbook_file"
         playbook_final_path="$base_dir/$_arg_named_playbook_file"
     # 2.1 + 2.2
@@ -290,7 +306,6 @@ parse_playbook_arg() {
                 check_file_paths+=("$playbook_base_dir_playbook_subdir/site.yml")
             fi
 
-            # Lastly
             # Playbook directory
             check_file_paths+=("$playbook_base_dir/$_arg_positional_playbook.yml")
             check_file_paths+=("$playbook_base_dir/$_arg_positional_playbook.yaml")
@@ -302,10 +317,8 @@ parse_playbook_arg() {
             find_playbook_in_paths
         fi
     elif [[ -z "$_arg_positional_playbook" ]]; then
-        debug "DEBUG: 3. Not playbook provided at all."
         debug "DEBUG: 3. No playbook provided at all."
         
-        if [[ ! -z "$_arg_positional_inventory_file" ]] 
         if [[ ! -z "$_arg_positional_inventory" ]] 
         then
                 
@@ -337,13 +350,8 @@ parse_playbook_arg() {
                 # Run block again
                 find_playbook_in_paths
             fi
-        
         fi
-    fi
 
-    # If it still can't find it, assign the final to the default and don't even bother checking if it's a file
-    if [[ ! -f "$playbook_final_path" ]]; then
-        playbook_final_path="$default_playbook_file_name"
         # If it still can't find it, assign the final to the default and don't even bother checking if it's a file
         if [[ ! -f "$playbook_final_path" ]]; then
             playbook_final_path="$default_playbook_file_name"
@@ -390,7 +398,6 @@ fi
 # remainder_args[@] (arr) -- pass to ansible-playbook directly
 
 debug ""
-debug "DEBUG: Base path is: $base_folder"
 debug "DEBUG: Base path is: $base_dir"
 debug ""
 debug "DEBUG: Passed Commands:" "${ansible_append_flags[*]}"
