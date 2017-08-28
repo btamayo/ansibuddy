@@ -3,63 +3,102 @@
 
 [![Build Status](https://travis-ci.org/btamayo/ansibuddy.svg?branch=master)](https://travis-ci.org/btamayo/ansibuddy) [![stability-wip](https://img.shields.io/badge/stability-work_in_progress-lightgrey.svg)](https://github.com/btamayo/ansibuddy)
 
-**[WIP] Do not use.**
+Ansibuddy is a CLI tool that simplifies running ansible-playbook. It takes in simple CLI commands and runs the equivalent ansible-playbook command, including it's flags and parameters.
+
+## Install
+```
+$ brew update && brew tap btamayo/cli
+$ brew install ansibuddy
+```
 
 
 ## Usage
 
-```bash
-$ ./ap.sh (<hostgroup> | -i <inventory-file>) (<playbook> | -p <playbook-file>) [<command>...] -- [ansible-playbook-args]
+Ansibuddy supports both simple project structures (e.g. one env, app, or project in one ansible project) and complex ones (multiple projects and environments in the same ansible directory).
+
+For all project structures, the basic usage is:
+
+```shell
+$ ansibuddy [host param] [playbook param]
 ```
 
-#### `hostgroup`:
-  - General format(s): `<service>.<environment>.<host group>` e.g. `myblog.dev.docker`
+### Simple directory structure:
 
-#### `inventory-file`:
-  - Pass in an inventory file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Inventory files passed in with the `-i` flag always takes precedence over `<hostgroup>` and should not be passed together.
-
-#### `playbook`:
-  - @TODO: Bianca Tamayo (Jul 22, 2017) - document precedence 
-
-#### `playbook-file`:
-  - Pass in a playbook file path. If the path is relative, it will treat it as relative from the current working directory and does not perform any searches or checks. Playbook files passed in with the `-p` flag always takes precedence over `<playbook>` and should not be passed together.
-
-#### `command`:
-  - `check`: 
-    - Run a syntax check (`ansible-playbook ... --syntax-check`)
-  - `list-hosts`: 
-    - List the affected hosts of this playbook run (`ansible-playbook ... --list-hosts`)
-  - `help`: Display usage
-
-
-`ansible-playbook-args`: 
-  - Pass other ansible-playbook args. **You must separate between Ansibuddy arguments and ansible-playbook args using `--`**. 
-  - If you pass in `--syntax-check`, `-i <hostfile>`,  `--inventory-file <hostfile>`, `-l <subset>`, `--limit <subset>` or `--list-hosts` through `ansible-playbook-args`, Ansibuddy will defer to those args instead.
-
-For example, running "`bianca-blog.dev.docker site.yml -- -l webservers`" will give you `-l webservers` despite `docker` being provided as the `group name` into Ansibuddy:
+Let's say your directory structure is similar to the one Ansible  has on their [best practices page](http://docs.ansible.com/ansible/latest/playbooks_best_practices.html#content-organization) (irrelevant directories are omitted for brevity):
 
 ```
-./ap bianca-blog.dev.docker site.yml -- -l webservers
+production                # inventory file for production servers
+staging                   # inventory file for staging environment
 
-[EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l webservers
+site.yml                  # master playbook
+webservers.yml            # playbook for webserver tier
+dbservers.yml             # playbook for dbserver tier
 ```
 
-However, using `/ap.sh bianca-blog.dev.docker site.yml` without the `-- -l webservers` parameter will limit it to the docker group hosts.
+Here, the hosts and playbooks are both in the root directory.
+
+
+From the root directory, we can run ansibuddy to help us simplify ansible-playbook cli inputs. Output marked `[EXEC]` shows you what ansibuddy determines the equivalent ansible-playbook command is.
+
+```shell
+# Just by itself
+$ ansibuddy
+[EXEC]: ansible-playbook site.yml
+
+Here you see that it falls back to site.yml, and it does not know which inventory file to pass in. If you defined a default inventory file in `ansible.cfg`, ansible-playbook will use that.
+```
 
 ```
-./ap.sh bianca-blog.dev.docker site.yml
+# Choosing an inventory file
+# Remember that the `host group` is the first parameter
 
-[EXEC]: ansible-playbook -i $PROJECT_ROOT/inventories/bianca-blog/dev/hosts $PROJECT_ROOT/playbooks/bianca-blog/site.yml -l docker
+$ ansibuddy production
+[EXEC]: ansible-playbook -i ./production site.yml
+                              ^^^ Ansibuddy sees that 'production' exists but can't determine a playbook from it, so falls back to site.yml
 ```
 
-## Possible Future Enhancements
+Let's say you want to use the `production` inventory file (_environment_), and limit to the `docker` servers:
 
-- Integrate with [argbash](https://github.com/matejak/argbash)
-- Subcommands e.g.:
-    - `setup`: sets up the machine
-    - `install`: installs the app or service
-    - `deploy`: configures components on the host(s) for the app
+```
+$ ansibuddy production.docker
 
+[EXEC]: ansible-playbook -i ./production site.yml -l docker
+                               ^^^ Ansibuddy sees that 'production' exists, picks it as a host, then adds the -l docker. It cannot find a suitable playbook except for the fallback, `site.yml`
+
+
+# If we run the same command with the `-x` (debug) flag, it shows us the search paths (note that in the actual debug output, the paths are shown in full, they're omitted here and represented as `./` for brevity:
+
+DEBUG: Determining correct inventory from 'production.docker'
+DEBUG: Inventory file not found in: /production/hosts
+DEBUG: ./production is not a directory
+DEBUG: Found inventory file in ./production
+DEBUG: Found service name: production
+DENUG: Found env name: docker
+DEBUG: <parent>.<child> hostgroups are:
+docker
+DEBUG: Length of grp arr: 1
+INFO: Limiting to host groups [docker]
+DEBUG: 3. No playbook provided at all.
+DEBUG: Playbook not found in: ./playbooks/production.yml
+DEBUG: Playbook not found in: ./playbooks/production.yaml
+DEBUG: Playbook not found in: ./playbooks/production
+DEBUG: Playbook not found in: ./playbooks/production/production
+
+
+[EXEC]: ansible-playbook -i ./production site.yml -l docker
+```
+
+As you can see, ansibuddy tries to find a playbook based on "production" but since it cannot safely find an existing one, it defaults to `site.yml`.
+
+### Adding a playbook:
+
+The playbook is the second positional argument.
+
+```
+$ ansibuddy production.docker webservers.yml
+
+[EXEC]: ansible-playbook -i ./production ./webservers.yml -l docker
+```
 
 
 ## Testing
