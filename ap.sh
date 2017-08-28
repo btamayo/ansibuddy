@@ -181,6 +181,15 @@ parse_inventory_arg() {
                 fi
             fi
 
+            # If it's stilllll can't find it, at least assign the -l
+            if [[ -z $hostsfile_final_path ]]; then
+                grp=("${tokens[@]}")
+            fi
+
+
+            # Assign the grp
+            playgroups=${grp[*]}
+
             debug "DEBUG: Found service name: $service_name"
             debug "DENUG: Found env name: $env_name"
     
