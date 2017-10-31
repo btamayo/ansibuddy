@@ -1,9 +1,9 @@
 ## Testing
 
-To test bash scripts, we use [bats](https://github.com/sstephenson/bats), then generate tests. This is to speed up both running the tests (as they're not generated every time), and writing them (simple YAML configuration).
+To test bash scripts, we use [bats](https://github.com/bats-core/bats-core), then generate tests. This is to speed up both running the tests (as they're not generated every time), and writing them (simple YAML configuration).
 
 ### To run the tests:
-- Install [bats](https://github.com/sstephenson/bats) first.
+- Install [bats](https://github.com/bats-core/bats-core) first.
 - Install the submodules if needed:
     - [bats-assert](https://github.com/ztombol/bats-assert)
     - [bats-support](https://github.com/ztombol/bats-support)
