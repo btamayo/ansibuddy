@@ -252,6 +252,9 @@ parse_playbook_arg() {
     # @TODO: Bianca Tamayo (Aug 25, 2017) - If there's no service name (e.g. if command is passed in with -i, then there's no need to go into service subdirs)
     service_playbook_base_path="${playbook_base_dir}/${service_name}"
 
+    # Add warning for no playbook directory for specified service
+    echo "WARN: No playbook directory for service. Expected: ${playbook_base_dir}/${service_name}/"
+
     # 1
     if [[ ! -z "$_arg_named_playbook_file" ]]; then
         debug "DEBUG: 1 Passed using -p, set as final path"
