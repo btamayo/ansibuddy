@@ -29,6 +29,26 @@
 # @TODO: Bianca Tamayo (Aug 16, 2017) - Make sure this still works when you change context
 rootdir="$(dirname "$0")"
 
+# @TODO: Bianca Tamayo (Nov 17, 2017) - Change this copypasta, also fall through backup
+# functions to handle failure. Also deleted windows part because I'm not supporting
+# windows right now. Also should be in postinstall script, not run script.
+# @TODO: Bianca Tamayo (Nov 17, 2017) - Check script in
+# https://stackoverflow.com/a/33266819 for applicability
+# @TODO: Bianca Tamayo (Nov 17, 2017) - Also requires paths to be reliable 
+# and directory structure to remain the same
+
+case "$OSTYPE" in
+  solaris*) echo "SOLARIS" ;;
+  darwin*)  rootdir="$(dirname $(readlink "$0"))" ;; # Change default for macOS
+  linux*)   echo "LINUX" ;;
+  bsd*)     echo "BSD" ;;
+  msys*)    echo "WINDOWS" ;;
+  *)        echo "unknown: $OSTYPE" ;;
+esac
+
+echo "DEBUG: rootdir for OS ($OSTYPE): $rootdir"
+
+
 . "$rootdir/usage.bash"
 
 # "Constants"
