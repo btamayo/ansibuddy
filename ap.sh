@@ -137,6 +137,10 @@ parse_inventory_arg() {
         # {base_inventory_find_dir} can be $base_inventory_dir/$service_name/, $base_inventory_dir/, or $base_dir/$service_name/, or $base_dir (in order)
         service_name="${tokens[0]}"
         base_inventory_find_dir=$base_inventory_dir
+
+        if [[ -z $service_name ]]; then
+            echo "WARN: No service name provided"
+        fi
         
         grp=("${tokens[@]:1}") # Chop off the groupchilds (minus the service_name)
 
@@ -201,8 +205,9 @@ parse_inventory_arg() {
                 fi
             fi
 
-            # If it's stilllll can't find it, at least assign the -l
+            # If it's stilllll can't find it, at least assign the -l and print a warning
             if [[ -z $hostsfile_final_path ]]; then
+                echo "WARNING: Cannot find inventory file in search paths. Run -x for debug."
                 grp=("${tokens[@]}")
             fi
 
@@ -251,6 +256,9 @@ parse_playbook_arg() {
     # This is for polish
     # @TODO: Bianca Tamayo (Aug 25, 2017) - If there's no service name (e.g. if command is passed in with -i, then there's no need to go into service subdirs)
     service_playbook_base_path="${playbook_base_dir}/${service_name}"
+
+    # Add warning for no playbook directory for specified service
+    echo "WARN: No playbook directory for service. Expected: ${playbook_base_dir}/${service_name}/"
 
     # 1
     if [[ ! -z "$_arg_named_playbook_file" ]]; then
