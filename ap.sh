@@ -137,6 +137,10 @@ parse_inventory_arg() {
         # {base_inventory_find_dir} can be $base_inventory_dir/$service_name/, $base_inventory_dir/, or $base_dir/$service_name/, or $base_dir (in order)
         service_name="${tokens[0]}"
         base_inventory_find_dir=$base_inventory_dir
+
+        if [[ -z $service_name ]]; then
+            echo "WARN: No service name provided"
+        fi
         
         grp=("${tokens[@]:1}") # Chop off the groupchilds (minus the service_name)
 
