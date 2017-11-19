@@ -122,7 +122,7 @@ parse_inventory_arg() {
         # If the inventory is positional in first place, warn the user and direct them 
         if [[ $_arg_positional_inventory =~ (.+\.yml|.+\.yaml) ]] 
         then
-            echo "WARNING: '$_arg_positional_inventory' looks like a YAML file. Use '-p $_arg_positional_inventory' to omit the hosts parameter when passing in a playbook."
+            echo "WARN: '$_arg_positional_inventory' looks like a YAML file. Use '-p $_arg_positional_inventory' to omit the hosts parameter when passing in a playbook."
         fi
 
         debug "DEBUG: Determining correct inventory from '$_arg_positional_inventory'"
@@ -165,6 +165,13 @@ parse_inventory_arg() {
                     # If ./inventories/service_name/dev is a file, chop `dev` off the childgroups
                     hostsfile_final_path="$inventory_base_dir/$service_name/$env_name"
                     grp=("${grp[@]:1}")
+    
+                elif [[ -f "$inventory_base_dir/$service_name/$env_name/hosts" && ! -z $env_name ]]; then
+                    # If ./inventories/service_name/env/hosts is a file, chop `dev` off the childgroups
+
+                    # If ./inventories/service_name/dev is a file, chop `dev` off the childgroups
+                    hostsfile_final_path="$inventory_base_dir/$service_name/$env_name/hosts"
+                    grp=("${grp[@]:1}")
                 fi
 
             elif [[ -f "$inventory_base_dir/$service_name" ]]; then 
@@ -205,22 +212,24 @@ parse_inventory_arg() {
                 fi
             fi
 
-            # If it's stilllll can't find it, at least assign the -l and print a warning
+            # If it's stilllll can't find it, print a warning
             if [[ -z $hostsfile_final_path ]]; then
-                echo "WARNING: Cannot find inventory file in search paths. Run -x for debug."
-                grp=("${tokens[@]}")
+                echo "WARN: Cannot find inventory file in search paths. Run -x for debug."
             fi
+        fi
 
-
-            # Assign the grp
+        # Assign the grp
             playgroups=${grp[*]}
 
             debug "DEBUG: Found service name: $service_name"
-            debug "DENUG: Found env name: $env_name"
+            debug "DEBUG: Found env name: $env_name"
     
             debug "DEBUG: <parent>.<child> hostgroups are:" "${grp[@]}"
             debug "DEBUG: Length of grp arr: ${#grp[@]}"
             debug "INFO: Limiting to host groups [${grp[*]}]"
+
+        if [[ -z $hostsfile_final_path ]]; then
+            echo "WARN: Cannot find inventory file in search paths. Run -x for debug."
         fi
     fi
 }
